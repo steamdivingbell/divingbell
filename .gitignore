@@ -1,5 +1,6 @@
 \bin\html5\haxe
 \bin\html5\obj
+
 \bin\data\v2\app_details_and_images.zip
 bin/html5/bin/data/v2/app_details_and_images.zip
 
@@ -18,3 +19,10 @@ bin/html5/haxe/ApplicationMain.hx
 bin/html5/haxe/
 
 bin/.build
+
+
+
+# I added these
+
+bin/html5/bin/data/v2
+
