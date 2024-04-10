@@ -1,27 +1,56 @@
 <html>
 <head>
-  <link rel="stylesheet" type="text/css" href="style.css">
   <script src="./index.js" type="text/javascript"></script>
 </head>
-<body>
+<body style="background: rgb(27, 40, 56); font-family: Helvetica, Arial, sans-serif; color: white">
   <div id="main" style="display: flex; width: 100%">
-    <div id="leftside" style="display: flex; width: 50%">
+    <div id="leftside" style="flex: 1 1 50%; display: flex; flex-direction: column">
       <table id="games" style="display: flex">
         <tr>
-          <td id="tl-root"><div id="tl-title"></div><img id="tl-image" class="autosize"></img></td>
-          <td id="tm-root"><div id="tm-title"></div><img id="tm-image" class="autosize"></img></td>
-          <td id="tr-root"><div id="tr-title"></div><img id="tr-image" class="autosize"></img></td>
-        </tr><tr>                                                        
-          <td id="ml-root"><div id="ml-title"></div><img id="ml-image" class="autosize"></img></td>
-          <td id="mm-root"><div id="mm-title"></div><img id="mm-image" class="autosize"></img></td>
-          <td id="mr-root"><div id="mr-title"></div><img id="mr-image" class="autosize"></img></td>
-        </tr><tr>                                                        
-          <td id="bl-root"><div id="bl-title"></div><img id="bl-image" class="autosize"></img></td>
-          <td id="bm-root"><div id="bm-title"></div><img id="bm-image" class="autosize"></img></td>
-          <td id="br-root"><div id="br-title"></div><img id="br-image" class="autosize"></img></td>
+          <td id="tl-cell" style="width: 33%">
+            <div id="tl-title" style="float: left"></div>
+            <div id="tl-note"  style="float: right"></div>
+            <img id="tl-image" style="max-width: 100%; max-height: 100%"></img>
+          </td><td id="tm-cell" style="width: 33%">
+            <div id="tm-title" style="float: left"></div>
+            <div id="tm-note"  style="float: right"></div>
+            <img id="tm-image" style="max-width: 100%; max-height: 100%"></img>
+          </td><td id="tr-cell" style="width: 33%">
+            <div id="tr-title" style="float: left"></div>
+            <div id="tr-note"  style="float: right"></div>
+            <img id="tr-image" style="max-width: 100%; max-height: 100%"></img>
+          </td>
+        </tr><tr>          
+          <td id="ml-cell" style="width: 33%">
+            <div id="ml-title" style="float: left"></div>
+            <div id="ml-note"  style="float: right"></div>
+            <img id="ml-image" style="max-width: 100%; max-height: 100%"></img>
+          </td><td id="mm-cell" style="width: 33%">
+            <div id="mm-title" style="float: left"></div>
+            <div id="mm-note"  style="float: right"></div>
+            <img id="mm-image" style="max-width: 100%; max-height: 100%"></img>
+          </td><td id="mr-cell" style="width: 33%">
+            <div id="mr-title" style="float: left"></div>
+            <div id="mr-note"  style="float: right"></div>
+            <img id="mr-image" style="max-width: 100%; max-height: 100%"></img>
+          </td>
+        </tr><tr>          
+          <td id="bl-cell" style="width: 33%">
+            <div id="bl-title" style="float: left"></div>
+            <div id="bl-note"  style="float: right"></div>
+            <img id="bl-image" style="max-width: 100%; max-height: 100%"></img>
+          </td><td id="bm-cell" style="width: 33%">
+            <div id="bm-title" style="float: left"></div>
+            <div id="bm-note"  style="float: right"></div>
+            <img id="bm-image" style="max-width: 100%; max-height: 100%"></img>
+          </td><td id="br-cell" style="width: 33%">
+            <div id="br-title" style="float: left"></div>
+            <div id="br-note"  style="float: right"></div>
+            <img id="br-image" style="max-width: 100%; max-height: 100%"></img>
+          </td>
         </tr>
       </table>
-      <div id="controls">
+      <div id="controls" style="display: flex; width: 100%; justify-content: space-between">
         <div id="less">Back</div>
         <div id="gems">Gems</div>
         <div id="tags">Tags</div>
@@ -30,10 +59,11 @@
         <div id="more">More</div>
       </div>
     </div>
-    <div id="rightside" style="display: flex; width: 50%">
-      <div id="about" href="https://www.example.com">What is this webpage? How does it work?</div>
-      <div id="game-title"></div>
-      <div id="wishlist">Add to wishlist</div>
+    <div id="rightside" style="flex: 0 1 50%">
+      <a href="https://www.fortressofdoors.com/steam-diving-bell/">What is this webpage? How does it work?</a>
+      <hr>
+      <h1 id="game-title"></h1>
+      <div id="wishlist" style="border-radius: 28px; font-size: 20; font-family: Arial" onclick="wishlist()">Add to wishlist</div>
       <div id="store-page">Visit store page</div>
       <div id="description"></div>
       <div id="images" style="display: flex"></div>
