@@ -1,51 +1,54 @@
 <html>
 <head>
+  <meta charset="utf-8">
+  <title>Steam Diving Bell</title>
+  <link rel="shortcut icon" type="image/png" href="./favicon.png">
   <script src="./index.js" type="text/javascript"></script>
 </head>
 <body style="background: rgb(27, 40, 56); font-family: Helvetica, Arial, sans-serif; color: white">
   <div id="main" style="display: flex; width: 100%">
-    <div id="leftside" style="flex: 1 1 50%; display: flex; flex-direction: column">
+    <div id="leftside" style="flex-basis: 50%; display: flex; flex-direction: column">
       <table id="games" style="display: flex">
         <tr>
           <td id="tl-cell" style="width: 33%">
-            <div id="tl-title" style="float: left"></div>
-            <div id="tl-note"  style="float: right"></div>
+            <div id="tl-title" style="float: left; padding: 5px"></div>
+            <div id="tl-note"  style="float: right; padding: 5px"></div>
             <img id="tl-image" style="max-width: 100%; max-height: 100%"></img>
           </td><td id="tm-cell" style="width: 33%">
-            <div id="tm-title" style="float: left"></div>
-            <div id="tm-note"  style="float: right"></div>
+            <div id="tm-title" style="float: left; padding: 5px"></div>
+            <div id="tm-note"  style="float: right; padding: 5px"></div>
             <img id="tm-image" style="max-width: 100%; max-height: 100%"></img>
           </td><td id="tr-cell" style="width: 33%">
-            <div id="tr-title" style="float: left"></div>
-            <div id="tr-note"  style="float: right"></div>
+            <div id="tr-title" style="float: left; padding: 5px"></div>
+            <div id="tr-note"  style="float: right; padding: 5px"></div>
             <img id="tr-image" style="max-width: 100%; max-height: 100%"></img>
           </td>
         </tr><tr>          
           <td id="ml-cell" style="width: 33%">
-            <div id="ml-title" style="float: left"></div>
-            <div id="ml-note"  style="float: right"></div>
+            <div id="ml-title" style="float: left; padding: 5px"></div>
+            <div id="ml-note"  style="float: right; padding: 5px"></div>
             <img id="ml-image" style="max-width: 100%; max-height: 100%"></img>
           </td><td id="mm-cell" style="width: 33%">
-            <div id="mm-title" style="float: left"></div>
-            <div id="mm-note"  style="float: right"></div>
+            <div id="mm-title" style="float: left; padding: 5px"></div>
+            <div id="mm-note"  style="float: right; padding: 5px"></div>
             <img id="mm-image" style="max-width: 100%; max-height: 100%"></img>
           </td><td id="mr-cell" style="width: 33%">
-            <div id="mr-title" style="float: left"></div>
-            <div id="mr-note"  style="float: right"></div>
+            <div id="mr-title" style="float: left; padding: 5px"></div>
+            <div id="mr-note"  style="float: right; padding: 5px"></div>
             <img id="mr-image" style="max-width: 100%; max-height: 100%"></img>
           </td>
         </tr><tr>          
           <td id="bl-cell" style="width: 33%">
-            <div id="bl-title" style="float: left"></div>
-            <div id="bl-note"  style="float: right"></div>
+            <div id="bl-title" style="float: left; padding: 5px"></div>
+            <div id="bl-note"  style="float: right; padding: 5px"></div>
             <img id="bl-image" style="max-width: 100%; max-height: 100%"></img>
           </td><td id="bm-cell" style="width: 33%">
-            <div id="bm-title" style="float: left"></div>
-            <div id="bm-note"  style="float: right"></div>
+            <div id="bm-title" style="float: left; padding: 5px"></div>
+            <div id="bm-note"  style="float: right; padding: 5px"></div>
             <img id="bm-image" style="max-width: 100%; max-height: 100%"></img>
           </td><td id="br-cell" style="width: 33%">
-            <div id="br-title" style="float: left"></div>
-            <div id="br-note"  style="float: right"></div>
+            <div id="br-title" style="float: left; padding: 5px"></div>
+            <div id="br-note"  style="float: right; padding: 5px"></div>
             <img id="br-image" style="max-width: 100%; max-height: 100%"></img>
           </td>
         </tr>
@@ -59,13 +62,17 @@
         <div id="more">More</div>
       </div>
     </div>
-    <div id="rightside" style="flex: 0 1 50%">
+    <div id="rightside" style="flex-basis: 50%; display: block; padding: 0.5em; text-align: center">
       <a href="https://www.fortressofdoors.com/steam-diving-bell/">What is this webpage? How does it work?</a>
-      <hr>
-      <h1 id="game-title"></h1>
-      <div id="wishlist" style="border-radius: 28px; font-size: 20; font-family: Arial" onclick="wishlist()">Add to wishlist</div>
-      <div id="store-page">Visit store page</div>
-      <div id="description"></div>
+      <hr width="100%">
+      <h1 id="game-title" style="text-align: left"></h1>
+      <div id="wishlist" style="border-radius: 28px; font-size: 20; padding: 10px; background: #3cb0fd; font-family: Arial; max-width: 100%" onpointerdown="wishlist()">Add to wishlist</div>
+      <p>
+      <a href="_blank" id="store-page" style="font-size: x-large; font-weight: bold; color: skyblue; padding: 10px">Visit store page</a>
+      <iframe src="https://store.steampowered.com/widget/500/?utm_source=homepage&utm_campaign=mycampaign"></iframe>
+      <br>
+      <div id="short-description">Short description</div>
+      <br>
       <div id="images" style="display: flex"></div>
     </div>
   </div>

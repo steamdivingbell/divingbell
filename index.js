@@ -26,11 +26,11 @@ function set(id, key, value) {
 }
 
 var styles = {
-  'Hidden Gem': 'background: blue; color: white; font-weight: bold',
-  'Similar tags': 'background: green; color: white; font-weight: bold',
-  'Reverse match': 'background: purple; color: white; font-weight: bold',
-  'Loose match': 'background: brown; color: white; font-weight: bold',
-  'Selected': 'background: white; color: black; font-weight: bold',
+  'Hidden Gem': 'background: blue; color: white; font-weight: bold; font-size: 20px',
+  'Similar tags': 'background: green; color: white; font-weight: bold; font-size: 20px',
+  'Reverse match': 'background: purple; color: white; font-weight: bold; font-size: 20px',
+  'Loose match': 'background: brown; color: white; font-weight: bold; font-size: 20px',
+  'Selected': 'background: white; color: black; font-weight: bold; font-size: 20px',
 }
 
 function setImageCard(loc, gameId, recommender, note) {
@@ -53,4 +53,7 @@ function loadImages() {
   setImageCard('mm', '210970', 'Selected')
   
   set('game-title', 'innerText', games['210970']['name'])
+  
+  // Consider: https://store.steampowered.com/widget/210970
+  // Consider: steam://store/210970 ("Open in steam")
 }
