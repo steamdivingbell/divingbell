@@ -54,9 +54,6 @@ function loadImages() {
   
   set('game-title', 'innerText', games['210970']['name'])
   
-  // Consider: https://store.steampowered.com/widget/210970
-  // Consider: steam://store/210970 ("Open in steam")
-  
   set('open-web', 'href', 'https://store.steampowered.com/app/' + '210970' + '?utm_campaign=divingbell')
   set('open-app', 'href', 'steam://store/' + '210970')
 
@@ -66,16 +63,47 @@ function loadImages() {
   .then(r => {
     set('short-description', 'innerText', r.short_description)
     set('price', 'innerText', r.price_overview.final_formatted)
-    // description += '<br><strong>Tags:</strong>'
-    // description += '<br><strong>Genres:</strong>'
-    // description += '<br><strong>Platforms:</strong>'
-    // description += '<br><strong>Categories:</strong>  Single-player, Steam Achievements, Captions available, Partial Controller Support, Steam Cloud
-    // set('rating', wtf where does this information come from)
+    set('genres', 'innerText', r.genres.map(g => g.description).join(', '))
+    var platforms = []
+    if (r.platforms.windows) platforms.push('Windows')
+    if (r.platforms.mac)     platforms.push('Mac')
+    if (r.platforms.linux)   platforms.push('Linux')
+    set('platforms', 'innerText', platforms.join(', '))
+    set('categories', 'innerText', r.categories.map(c => c.description).join(', '))
     set('video', 'src', r.movies[0].webm.max)
     set('photo-1', 'src', r.screenshots[0].path_full)
     set('photo-2', 'src', r.screenshots[1].path_full)
     set('photo-3', 'src', r.screenshots[2].path_full)
   })
+
+  // Sigh. I'm pretty sure this shouldn't be a separate database, so I'm keeping it inline (although I'm sure it's a perf loss)
+  fetch('bin/html5/bin/data/v2/reviews/raw.tsv')
+  .then(r => r.text())
+  .then(r => {
+    for (var line of r.split('\n')) {
+      var [gameId, positive, total] = line.split('\t')
+      if (gameId == '210970') {
+        set('rating', 'innerText', ratingText(positive, total))
+        return
+      }
+    }
+  })
+  
+  // Tags are here but I'm lazy:
+  // 1718 bin/html5/bin/data/v2/tags/all.tsv:1606:210970     45,123,6,57,33,172,41,97,34,29,262,304,141,144,173,185,44,240,42,65
+}
+
+function ratingText(positive, total) {
+  var perc = positive / total
+  
+  // Rating names according to https://reddit.com/r/Steam/comments/ivz45n/
+  var ratingNames = []
+  if (total < 50)       ratingNames = [[0.80, 'Positive'],      [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Negative']]
+  else if (total < 500) ratingNames = [[0.80, 'Very Positive'], [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Very Negative']]
+  else                  ratingNames = [[0.95, 'Overwhelmingly Positive'], [0.80, 'Very Positive'], [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Overwhelmingly Negative']]
+  var ratingName = ratingNames.find(x => x[0] < perc)[1]
+  
+  return `${ratingName} (${Math.trunc(100 * perc)}% ---- ${total} ratings)`
 }
 
 function setupButtons() {
