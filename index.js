@@ -1,23 +1,28 @@
-// This should be a database.
-var games = {}
 window.onload = function() {
   // For local development, run chrome with --allow-file-access-from-files
-  fetch('bin/html5/bin/data/v2/titles.tsv')
-  .then(r => r.text())
-  .then(r => {
-    for (var line of r.split('\n')) {
-      var [gameId, gameName] = line.split('\t')
-      games[gameId] = {'name': gameName}
-    }
-  })
-  .then(r => loadImages())
-  .then(r => setupButtons())
+  // I might be able to work around that at some point by using actual JS files.
+
+  set('r_gems',    'onpointerdown', toggleRecommender)
+  set('r_tags',    'onpointerdown', toggleRecommender)
+  set('r_loose',   'onpointerdown', toggleRecommender)
+  set('r_reverse', 'onpointerdown', toggleRecommender)
+
+  Promise.all([load_game_data(), load_tag_data()])
+  .then(r => loadAboutGame(210970))
+  .then(r => loadImages(210970))
 }
 
 function set(id, key, value) {
   var elem = document.getElementById(id)
   if (key == 'innerText') {
     elem.innerText = value
+  } else if (key == 'onpointerdown') {
+    elem.addEventListener('onpointerdown', value)
+  } else if (key == 'hover') {
+    elem.addEventListener('mouseenter', () => {
+      var timer = setTimeout(value, 2000)
+      elem.addEventListener('mouseleave', () => { clearTimeout(timer) })
+    })
   } else if (key == 'style') {
     elem.style = value
   } else {
@@ -26,40 +31,57 @@ function set(id, key, value) {
 }
 
 var styles = {
-  'Hidden Gem': 'background: deepskyblue; color: white; font-weight: bold; font-size: 20px',
-  'Similar tags': 'background: darkgreen; color: white; font-weight: bold; font-size: 20px',
+  'Hidden Gem':    'background: deepskyblue; color: white; font-weight: bold; font-size: 20px',
+  'Similar tags':  'background: darkgreen; color: white; font-weight: bold; font-size: 20px',
   'Reverse match': 'background: darkmagenta; color: white; font-weight: bold; font-size: 20px',
-  'Loose match': 'background: sienna; color: white; font-weight: bold; font-size: 20px',
-  'Selected': 'background: white; color: black; font-weight: bold; font-size: 20px',
+  'Loose match':   'background: sienna; color: white; font-weight: bold; font-size: 20px',
+  'Selected':      'background: white; color: black; font-weight: bold; font-size: 20px',
 }
 
 function setImageCard(loc, gameId, recommender, note) {
   set(loc + '-cell', 'style', styles[recommender])
+  set(loc + '-cell', 'hover', () => {
+    // TODO: Tooltip here? Tooltip elsewhere?
+    loadAboutGame(gameId)
+  })
   set(loc + '-title', 'innerText', recommender)
   set(loc + '-title', 'href', 'https://store.steampowered.com/app/' + gameId) // wait what?
   if (note != null) set(loc + '-note', 'innerText', note)
   set(loc + '-image', 'src', 'https://cdn.akamai.steamstatic.com/steam/apps/' + gameId + '/header.jpg')
 }
 
-function loadImages() {
+function loadImages(gameId) {
+  setImageCard('mm', gameId, 'Selected')
+
+  var matches = reverse_matches(gameId)
+  setImageCard('ml', '866440', 'Reverse match')
+  setImageCard('bl', '383870', 'Reverse match')
+
   setImageCard('tl', '670750', 'Hidden Gem', '62%')
   setImageCard('tm', '243220', 'Hidden Gem', '62%')
   setImageCard('tr', '512790', 'Similar tags', '80%')
   setImageCard('mr', '258520', 'Similar tags', '65%')
-  setImageCard('ml', '866440', 'Reverse match')
-  setImageCard('bl', '383870', 'Reverse match')
   setImageCard('bm', '251110', 'Loose match')
   setImageCard('br', '624270', 'Loose match')
-  setImageCard('mm', '210970', 'Selected')
-  
-  set('game-title', 'innerText', games['210970']['name'])
-  
-  set('open-web', 'href', 'https://store.steampowered.com/app/' + '210970' + '?utm_campaign=divingbell')
-  set('open-app', 'href', 'steam://store/' + '210970')
+}
 
-  fetch('bin/html5/bin/data/v2/app_details/210970.txt')
+function toggleRecommender() {
+  if (this.className === 'toggle') {
+    this.className = 'toggle-off'
+  } else {
+    this.className = 'toggle'
+  }
+}
+
+function loadAboutGame(gameId) {
+  set('game-title', 'innerText', globalGameData[gameId]['name'])
+
+  set('open-web', 'href', `https://store.steampowered.com/app/${gameId}?utm_campaign=divingbell`)
+  set('open-app', 'href', `steam://store/${gameId}`)
+
+  fetch(`bin/html5/bin/data/v2/app_details/${gameId}.txt`)
   .then(r => r.json())
-  .then(r => r[210970].data)
+  .then(r => r[gameId].data)
   .then(r => {
     set('short-description', 'innerText', r.short_description)
     set('price', 'innerText', r.price_overview.final_formatted)
@@ -76,66 +98,17 @@ function loadImages() {
     set('photo-3', 'src', r.screenshots[2].path_full)
   })
 
-  // Sigh. I'm pretty sure this shouldn't be a separate database, so I'm keeping it inline (although I'm sure it's a perf loss)
-  fetch('bin/html5/bin/data/v2/reviews/raw.tsv')
-  .then(r => r.text())
-  .then(r => {
-    for (var line of r.split('\n')) {
-      var [gameId, positive, total] = line.split('\t')
-      if (gameId == '210970') {
-        set('rating', 'innerText', ratingText(positive, total))
-        return
-      }
-    }
-  })
-  
-  // Tags are here but I'm lazy:
-  // 1718 bin/html5/bin/data/v2/tags/all.tsv:1606:210970     45,123,6,57,33,172,41,97,34,29,262,304,141,144,173,185,44,240,42,65
-}
+  var tagNames = Array.from(globalGameData[gameId].tags).map(tag => globalTagData[tag].name)
+  set('tags', 'innerText', tagNames.join(', '))
 
-function ratingText(positive, total) {
-  var perc = positive / total
-  
+  var perc = globalGameData[gameId].perc
+  var total = globalGameData[gameId].total
+
   // Rating names according to https://reddit.com/r/Steam/comments/ivz45n/
   var ratingNames = []
   if (total < 50)       ratingNames = [[0.80, 'Positive'],      [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Negative']]
   else if (total < 500) ratingNames = [[0.80, 'Very Positive'], [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Very Negative']]
   else                  ratingNames = [[0.95, 'Overwhelmingly Positive'], [0.80, 'Very Positive'], [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Overwhelmingly Negative']]
   var ratingName = ratingNames.find(x => x[0] < perc)[1]
-  
-  return `${ratingName} (${Math.trunc(100 * perc)}% ---- ${total} ratings)`
-}
-
-function setupButtons() {
-  document.getElementById('gems').onpointerdown = function() {
-    if (this.className === 'toggle') {
-      this.className = 'toggle-off'
-    } else {
-      this.className = 'toggle'
-    }
-  }
-
-  document.getElementById('tags').onpointerdown = function() {
-    if (this.className === 'toggle') {
-      this.className = 'toggle-off'
-    } else {
-      this.className = 'toggle'
-    }
-  }
-
-  document.getElementById('loose').onpointerdown = function() {
-    if (this.className === 'toggle') {
-      this.className = 'toggle-off'
-    } else {
-      this.className = 'toggle'
-    }
-  }
-  
-  document.getElementById('reverse').onpointerdown = function() {
-    if (this.className === 'toggle') {
-      this.className = 'toggle-off'
-    } else {
-      this.className = 'toggle'
-    }
-  }
+  set('rating', 'innerText', `${ratingName} (${Math.trunc(100 * perc)}% — ${total} ratings)`)
 }
