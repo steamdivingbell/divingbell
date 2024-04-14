@@ -53,16 +53,21 @@ function setImageCard(loc, gameId, recommender, note) {
 function loadImages(gameId) {
   setImageCard('mm', gameId, 'Selected')
 
-  var matches = reverse_matches(gameId)
-  setImageCard('ml', '866440', 'Reverse match')
-  setImageCard('bl', '383870', 'Reverse match')
-
   setImageCard('tl', '670750', 'Hidden Gem', '62%')
   setImageCard('tm', '243220', 'Hidden Gem', '62%')
+
+  var matches = tag_matches(gameId)
+
   setImageCard('tr', '512790', 'Similar tags', '80%')
   setImageCard('mr', '258520', 'Similar tags', '65%')
-  setImageCard('bm', '251110', 'Loose match')
+
   setImageCard('br', '624270', 'Loose match')
+  setImageCard('bm', '251110', 'Loose match')
+
+  var matches = reverse_matches(gameId)
+  matches = sort_games_by_tags(Array.from(matches), gameId)
+  setImageCard('bl', '383870', 'Reverse match')
+  setImageCard('ml', '866440', 'Reverse match')
 }
 
 function toggleRecommender() {
@@ -74,7 +79,7 @@ function toggleRecommender() {
 }
 
 function loadAboutGame(gameId) {
-  set('game-title', 'innerText', globalGameData[gameId]['name'])
+  set('game-title', 'innerText', globalGameData.get(gameId).name)
 
   set('open-web', 'href', `https://store.steampowered.com/app/${gameId}?utm_campaign=divingbell`)
   set('open-app', 'href', `steam://store/${gameId}`)
@@ -98,11 +103,11 @@ function loadAboutGame(gameId) {
     set('photo-3', 'src', r.screenshots[2].path_full)
   })
 
-  var tagNames = Array.from(globalGameData[gameId].tags).map(tag => globalTagData[tag].name)
+  var tagNames = Array.from(globalGameData.get(gameId).tags).map(tag => globalTagData[tag].name)
   set('tags', 'innerText', tagNames.join(', '))
 
-  var perc = globalGameData[gameId].perc
-  var total = globalGameData[gameId].total
+  var perc = globalGameData.get(gameId).perc
+  var total = globalGameData.get(gameId).total
 
   // Rating names according to https://reddit.com/r/Steam/comments/ivz45n/
   var ratingNames = []
