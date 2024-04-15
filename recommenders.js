@@ -18,7 +18,15 @@ function loose_matches(gameId) {
       grandSiblings.add(grandSibling)
     }
   }
-  return Array.from(grandSiblings.difference(siblings)) // remove immediate siblings from the results
+  
+  // All second children who aren't immediate children or ourselves
+  var results = []
+  for (var grandSibling of grandSiblings) {
+    if (grandSibling == gameId) continue
+    if (siblings.has(grandSibling)) continue
+    results.push(grandSibling)
+  }
+  return results
 }
 
 // "Tags" is not too bad, although it requires a custom weighting which needs to be recomputed for each game. Caching?
@@ -29,7 +37,12 @@ function tag_matches(gameId) {
   var games = []
   for (var [game, data] of globalGameData.entries()) {
     if (game == gameId) continue // Don't recommend the current game
-    if (data.tags.intersection(importantTags).length > 0) games.push(game)
+    for (var tag in importantTags) {
+      if (data.tags.has(tag)) {
+        games.push(game)
+        break
+      }
+    }
   }
 
   return sort_games_by_tags(games, gameId)

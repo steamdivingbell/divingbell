@@ -17,6 +17,7 @@ function load_game_data() {
         'reverse': new Set(),
         'total': 0,
         'perc': 0.5,
+        'gemRating': 0.5,
       })
     }
   })
@@ -62,6 +63,18 @@ function load_game_data() {
       if (!globalGameData.has(gameId)) continue
       globalGameData.get(gameId).total = total
       globalGameData.get(gameId).perc = positive / total
+    }
+  })
+  .then(r => fetch('bin/html5/bin/data/v2/reviews/gem.tsv'))
+  .then(r => r.text())
+  .then(r => {
+    for (var line of r.split('\n')) {
+      var [gameId, gemRating] = line.split('\t')
+      gameId = parseInt(gameId)
+      if (!globalGameData.has(gameId)) continue
+      
+      // TODO: Probably similar to https://steamdb.info/blog/steamdb-rating/#javascript-implementation but there seems to be some weighting for fewer reviews?
+      globalGameData.get(gameId).gemRating = parseInt(gemRating)
     }
   })
 }

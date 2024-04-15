@@ -28,6 +28,7 @@ var styles = {
   'Similar tags':  'background: darkgreen; color: white; font-weight: bold; font-size: 20px',
   'Reverse match': 'background: darkmagenta; color: white; font-weight: bold; font-size: 20px',
   'Loose match':   'background: sienna; color: white; font-weight: bold; font-size: 20px',
+  'Default match': 'background: darkred; color: white; font-weight: bold; font-size: 20px',
   'Selected':      'background: white; color: black; font-weight: bold; font-size: 20px',
 }
 
