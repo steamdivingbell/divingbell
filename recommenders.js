@@ -1,12 +1,12 @@
 // "Default", aka more like this: https://store.steampowered.com/recommended/morelike/app/210970
 // This might need some revamping in the new system, since there's now (9 + 6 + 3 + 9) games listed on the store page.
 function default_matches(gameId) {
-  return globalGameData.get(gameId).similar
+  return Array.from(globalGameData.get(gameId).similar)
 }
 
 // "Reverse" is just "more like this" but inverse-lookup, which we have already indexed
 function reverse_matches(gameId) {
-  return globalGameData.get(gameId).reverse
+  return Array.from(globalGameData.get(gameId).reverse)
 }
 
 // "Loose" is a 2x 'default' match, excluding the default matches themselves.
@@ -18,14 +18,32 @@ function loose_matches(gameId) {
       grandSiblings.add(grandSibling)
     }
   }
-  return grandSiblings.difference(siblings) // remove immediate siblings from the results
+  return Array.from(grandSiblings.difference(siblings)) // remove immediate siblings from the results
 }
 
 // "Tags" is not too bad, although it requires a custom weighting which needs to be recomputed for each game. Caching?
 // TODO: According to mr. diving bell, "It starts by taking a subset of games that have *at least one matching tag in a major category* and then ranks them all."
 //       so I might need some culling for the actual recommender
 function tag_matches(gameId) {
-  return sort_games_by_tags(Array.from(globalGameData.keys()), gameId)
+  var importantTags = globalGameData.get(gameId).tags // TODO, what is the rule here?
+  var games = []
+  for (var [game, data] of globalGameData.entries()) {
+    if (game == gameId) continue // Don't recommend the current game
+    if (data.tags.intersection(importantTags).length > 0) games.push(game)
+  }
+
+  return sort_games_by_tags(games, gameId)
+}
+
+// "Hidden gems" is the tags matcher but only for games above some % rating and below some # total ratings. Not sure what those numbers are, yet.
+function gem_matches(gameId) {
+  var games = []
+  for (var [game, data] of globalGameData.entries()) {
+    if (game == gameId) continue // Don't recommend the current game
+    if (data.perc > 0.80 && data.total < 500) games.push(game)
+  }
+
+  return sort_games_by_tags(games, gameId)
 }
 
 function sort_games_by_tags(games, gameId) {
@@ -45,9 +63,7 @@ function sort_games_by_tags(games, gameId) {
     gameWeights.set(game, total == 0 ? 0 : weight / total)
   }
 
-  // We have to make a new array since we don't always have a sort key.
+  // Inverse sort so that the largest numbers (highest matches) are topmost
   games.sort((a, b) => Math.sign(gameWeights.get(b) - gameWeights.get(a)))
   return games
 }
-
-// "Hidden gems" is the tags matcher but only for games above some % rating and below some # total ratings. Not sure what those numbers are, yet.

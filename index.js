@@ -2,11 +2,6 @@ window.onload = function() {
   // For local development, run chrome with --allow-file-access-from-files
   // I might be able to work around that at some point by using actual JS files.
 
-  set('r_gems',    'onpointerdown', toggleRecommender)
-  set('r_tags',    'onpointerdown', toggleRecommender)
-  set('r_loose',   'onpointerdown', toggleRecommender)
-  set('r_reverse', 'onpointerdown', toggleRecommender)
-
   Promise.all([load_game_data(), load_tag_data()])
   .then(r => loadAboutGame(210970))
   .then(r => loadImages(210970))
@@ -16,8 +11,6 @@ function set(id, key, value) {
   var elem = document.getElementById(id)
   if (key == 'innerText') {
     elem.innerText = value
-  } else if (key == 'onpointerdown') {
-    elem.addEventListener('onpointerdown', value)
   } else if (key == 'hover') {
     elem.addEventListener('mouseenter', () => {
       var timer = setTimeout(value, 2000)
@@ -31,14 +24,15 @@ function set(id, key, value) {
 }
 
 var styles = {
-  'Hidden Gem':    'background: deepskyblue; color: white; font-weight: bold; font-size: 20px',
+  'Hidden gem':    'background: deepskyblue; color: white; font-weight: bold; font-size: 20px',
   'Similar tags':  'background: darkgreen; color: white; font-weight: bold; font-size: 20px',
   'Reverse match': 'background: darkmagenta; color: white; font-weight: bold; font-size: 20px',
   'Loose match':   'background: sienna; color: white; font-weight: bold; font-size: 20px',
   'Selected':      'background: white; color: black; font-weight: bold; font-size: 20px',
 }
 
-function setImageCard(loc, gameId, recommender, note) {
+function setImageCard(loc, data) {
+  var [gameId, recommender, note] = data
   set(loc + '-cell', 'style', styles[recommender])
   set(loc + '-cell', 'hover', () => {
     // TODO: Tooltip here? Tooltip elsewhere?
@@ -50,24 +44,74 @@ function setImageCard(loc, gameId, recommender, note) {
   set(loc + '-image', 'src', 'https://cdn.akamai.steamstatic.com/steam/apps/' + gameId + '/header.jpg')
 }
 
+var pageNo = 0
 function loadImages(gameId) {
-  setImageCard('mm', gameId, 'Selected')
+  /* this goes somewhere else, not sure. I need an onclick event anyways
+  set('less', 'onpointerdown', () => {
+    pageNo = (pageNo > 0 ? pageNo - 1 : 0)
+    loadImages(gameId)
+  })
+  set('more', 'onpointerdown', () => {
+    pageNo++
+    loadImages(gameId)
+  })
+  */
 
-  setImageCard('tl', '670750', 'Hidden Gem', '62%')
-  setImageCard('tm', '243220', 'Hidden Gem', '62%')
+  var r_gems = document.getElementById('r_gems').className == 'toggle'
+  var r_tags = document.getElementById('r_tags').className == 'toggle'
+  var r_loose = document.getElementById('r_loose').className == 'toggle'
+  var r_reverse = document.getElementById('r_reverse').className == 'toggle'
 
-  var matches = tag_matches(gameId)
+  var num_enabled = (r_gems ? 1 : 0) + (r_tags ? 1 : 0) + (r_loose ? 1 : 0) + (r_reverse ? 1 : 0)
+  var per_category = [12, 8, 4, 3, 2][num_enabled]
 
-  setImageCard('tr', '512790', 'Similar tags', '80%')
-  setImageCard('mr', '258520', 'Similar tags', '65%')
+  var gems = gem_matches(gameId)
+  var tags = tag_matches(gameId)
+  var loose = loose_matches(gameId)
+  var reverse = reverse_matches(gameId)
+  var similar = default_matches(gameId)
 
-  setImageCard('br', '624270', 'Loose match')
-  setImageCard('bm', '251110', 'Loose match')
+  for (var i = 0; i <= pageNo; i++) {
+    var matches = []
+    if (r_gems) {
+      for (var i = 0; i < Math.min(9 - matches.length, per_category); i++) {
+        if (gems.length == 0) break
+        matches.push([gems.shift(), 'Hidden gem', '0%']) // TODO: I guess I need to cache the game:tag list, mmk
+      }
+    }
+    if (r_tags) {
+      for (var i = 0; i < Math.min(9 - matches.length, per_category); i++) {
+        if (tags.length == 0) break
+        matches.push([tags.shift(), 'Similar tags', '0%']) // TODO: I guess I need to cache the game:tag list, mmk
+      }
+    }
+    if (r_loose) {
+      for (var i = 0; i < Math.min(9 - matches.length, per_category); i++) {
+        if (loose.length == 0) break
+        matches.push([loose.shift(), 'Loose match'])
+      }
+    }
+    if (r_reverse) {
+      for (var i = 0; i < Math.min(9 - matches.length, per_category); i++) {
+        if (reverse.length == 0) break
+        matches.push([reverse.shift(), 'Reverse match'])
+      }
+    }
+    for (var i = 0; i < Math.min(9 - matches.length, per_category); i++) {
+      if (similar.length == 0) break
+      matches.push([similar.shift(), 'Default match'])
+    }
+  }
 
-  var matches = reverse_matches(gameId)
-  matches = sort_games_by_tags(Array.from(matches), gameId)
-  setImageCard('bl', '383870', 'Reverse match')
-  setImageCard('ml', '866440', 'Reverse match')
+  setImageCard('mm', [gameId, 'Selected'])
+  setImageCard('tl', matches[0])
+  setImageCard('tm', matches[1])
+  setImageCard('tr', matches[2])
+  setImageCard('mr', matches[3])
+  setImageCard('br', matches[4])
+  setImageCard('bm', matches[5])
+  setImageCard('bl', matches[6])
+  setImageCard('ml', matches[7])
 }
 
 function toggleRecommender() {
@@ -84,6 +128,7 @@ function loadAboutGame(gameId) {
   set('open-web', 'href', `https://store.steampowered.com/app/${gameId}?utm_campaign=divingbell`)
   set('open-app', 'href', `steam://store/${gameId}`)
 
+  /*
   fetch(`bin/html5/bin/data/v2/app_details/${gameId}.txt`)
   .then(r => r.json())
   .then(r => r[gameId].data)
@@ -102,6 +147,7 @@ function loadAboutGame(gameId) {
     set('photo-2', 'src', r.screenshots[1].path_full)
     set('photo-3', 'src', r.screenshots[2].path_full)
   })
+  */
 
   var tagNames = Array.from(globalGameData.get(gameId).tags).map(tag => globalTagData[tag].name)
   set('tags', 'innerText', tagNames.join(', '))
