@@ -26,23 +26,26 @@ function loose_matches(gameId) {
     if (siblings.has(grandSibling)) continue
     results.push(grandSibling)
   }
-  return results
+
+  return sort_games_by_tags(results, gameId)
 }
 
 // "Tags" is not too bad, although it requires a custom weighting which needs to be recomputed for each game. Caching?
 // TODO: According to mr. diving bell, "It starts by taking a subset of games that have *at least one matching tag in a major category* and then ranks them all."
 //       so I might need some culling for the actual recommender
 function tag_matches(gameId) {
-  var importantTags = globalGameData.get(gameId).tags // TODO, what is the rule here?
+  // var importantTags = globalGameData.get(gameId).tags // TODO, what is the rule here?
   var games = []
   for (var [game, data] of globalGameData.entries()) {
     if (game == gameId) continue // Don't recommend the current game
-    for (var tag in importantTags) {
-      if (data.tags.has(tag)) {
-        games.push(game)
-        break
-      }
-    }
+    // TODO: Other rule here
+    games.push(game)
+    // for (var tag in importantTags) {
+    //   if (data.tags.has(tag)) {
+    //     games.push(game)
+    //     break
+    //   }
+    // }
   }
 
   return sort_games_by_tags(games, gameId)

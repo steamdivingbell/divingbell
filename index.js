@@ -5,6 +5,7 @@ window.onload = function() {
   Promise.all([load_game_data(), load_tag_data()])
   .then(r => loadAboutGame(210970))
   .then(r => loadImages(210970))
+  .then(r => setupButtons(210970))
 }
 
 function set(id, key, value) {
@@ -16,6 +17,8 @@ function set(id, key, value) {
       var timer = setTimeout(value, 2000)
       elem.addEventListener('mouseleave', () => { clearTimeout(timer) })
     })
+  } else if (key == 'onpointerdown') {
+    elem.addEventListener('pointerdown', value)
   } else if (key == 'style') {
     elem.style = value
   } else {
@@ -45,19 +48,8 @@ function setImageCard(loc, data) {
   set(loc + '-image', 'src', 'https://cdn.akamai.steamstatic.com/steam/apps/' + gameId + '/header.jpg')
 }
 
-var pageNo = 0
+var pageNo = 0 // Global, used for 'back' and 'more' buttons
 function loadImages(gameId) {
-  /* this goes somewhere else, not sure. I need an onclick event anyways
-  set('less', 'onpointerdown', () => {
-    pageNo = (pageNo > 0 ? pageNo - 1 : 0)
-    loadImages(gameId)
-  })
-  set('more', 'onpointerdown', () => {
-    pageNo++
-    loadImages(gameId)
-  })
-  */
-
   var r_gems = document.getElementById('r_gems').className == 'toggle'
   var r_tags = document.getElementById('r_tags').className == 'toggle'
   var r_loose = document.getElementById('r_loose').className == 'toggle'
@@ -75,30 +67,35 @@ function loadImages(gameId) {
   for (var i = 0; i <= pageNo; i++) {
     var matches = []
     if (r_gems) {
-      for (var i = 0; i < Math.min(9 - matches.length, per_category); i++) {
+      for (var i = 0; i < per_category; i++) {
+        if (matches.length == 8) break
         if (gems.length == 0) break
         matches.push([gems.shift(), 'Hidden gem', '0%']) // TODO: I guess I need to cache the game:tag list, mmk
       }
     }
     if (r_tags) {
-      for (var i = 0; i < Math.min(9 - matches.length, per_category); i++) {
+      for (var i = 0; i < per_category; i++) {
+        if (matches.length == 8) break
         if (tags.length == 0) break
         matches.push([tags.shift(), 'Similar tags', '0%']) // TODO: I guess I need to cache the game:tag list, mmk
       }
     }
     if (r_loose) {
-      for (var i = 0; i < Math.min(9 - matches.length, per_category); i++) {
+      for (var i = 0; i < per_category; i++) {
+        if (matches.length == 8) break
         if (loose.length == 0) break
         matches.push([loose.shift(), 'Loose match'])
       }
     }
     if (r_reverse) {
-      for (var i = 0; i < Math.min(9 - matches.length, per_category); i++) {
+      for (var i = 0; i < per_category; i++) {
+        if (matches.length == 8) break
         if (reverse.length == 0) break
         matches.push([reverse.shift(), 'Reverse match'])
       }
     }
-    for (var i = 0; i < Math.min(9 - matches.length, per_category); i++) {
+    for (var i = 0; ; i++) {
+      if (matches.length == 8) break
       if (similar.length == 0) break
       matches.push([similar.shift(), 'Default match'])
     }
@@ -115,12 +112,30 @@ function loadImages(gameId) {
   setImageCard('ml', matches[7])
 }
 
-function toggleRecommender() {
-  if (this.className === 'toggle') {
-    this.className = 'toggle-off'
-  } else {
-    this.className = 'toggle'
+function setupButtons(gameId) {
+  var toggleRecommender = function() {
+    if (this.className === 'toggle') {
+      this.className = 'toggle-off'
+    } else {
+      this.className = 'toggle'
+    }
+    
+    loadImages(gameId)
   }
+
+  set('r_gems', 'onpointerdown', toggleRecommender)
+  set('r_tags', 'onpointerdown', toggleRecommender)
+  set('r_loose', 'onpointerdown', toggleRecommender)
+  set('r_reverse', 'onpointerdown', toggleRecommender)
+  
+  set('back', 'onpointerdown', () => {
+    pageNo = (pageNo > 0 ? pageNo - 1 : 0)
+    loadImages(gameId)
+  })
+  set('more', 'onpointerdown', () => {
+    pageNo++
+    loadImages(gameId)
+  })
 }
 
 function loadAboutGame(gameId) {
