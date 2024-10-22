@@ -21,14 +21,14 @@ function set(id, key, value) {
     elem.addEventListener('pointerdown', value)
   } else if (key == 'style') {
     elem.style = value
+  } else if (key == 'display') {
+    elem.style.display = value
   } else {
     elem.setAttribute(key, value)
   }
 }
 
 var styles = {
-  'Hidden gem':    'background: deepskyblue; color: white; font-weight: bold; font-size: 20px',
-  'Similar tags':  'background: darkgreen; color: white; font-weight: bold; font-size: 20px',
   'Reverse match': 'background: darkmagenta; color: white; font-weight: bold; font-size: 20px',
   'Loose match':   'background: sienna; color: white; font-weight: bold; font-size: 20px',
   'Default match': 'background: darkred; color: white; font-weight: bold; font-size: 20px',
@@ -36,16 +36,52 @@ var styles = {
 }
 
 function setImageCard(loc, data) {
-  var [gameId, recommender, note] = data
-  set(loc + '-cell', 'style', styles[recommender])
-  set(loc + '-cell', 'hover', () => {
-    // TODO: Tooltip here? Tooltip elsewhere?
-    loadAboutGame(gameId)
-  })
+  var [gameId, recommender, baseGameId] = data
+  set(loc + '-cell', 'hover', () => loadAboutGame(gameId))
   set(loc + '-title', 'innerText', recommender)
   set(loc + '-title', 'href', 'https://store.steampowered.com/app/' + gameId) // wait what?
-  if (note != null) set(loc + '-note', 'innerText', note)
   set(loc + '-image', 'src', 'https://cdn.akamai.steamstatic.com/steam/apps/' + gameId + '/header.jpg')
+  
+  // TODO: I wrote this when I was tired. Probably a better way to do it.
+  var tagData = new Map()
+  for (var tagId of globalGameData.get(gameId).tags) {
+    var category = globalTagData[tagId].category
+    if (!tagData.has(category)) tagData.set(category, {'weight': 0, 'tags': []})
+    tagData.get(category).weight += globalTagData[tagId].weight
+    tagData.get(category).tags.push(globalTagData[tagId].name)
+  }
+  
+  var keys = Array.from(tagData.keys())
+  keys.sort((a, b) => Math.sign(tagData.get(a).weight - tagData.get(b).weight) || a.localeCompare(b))
+
+  var description = ''
+  for (var key of keys) {
+    description += `+${tagData.get(key).weight} for ${key}: {tagData.get(key).tags.join(', ')}\n`
+  }
+
+  if (recommender == 'Hidden gem') {
+    set(loc + '-cell', 'style', 'background: deepskyblue; color: white; font-weight: bold; font-size: 20px')
+    var titleText = 'Hidden gem\n'
+    titleText += globalGameData.get(gameId).name + ' is a highly-rated but little-known game'
+    // TODO: I guess I need some way to look up the matching tag list, probably just cache it idk
+    var perc = '55%'
+    set(loc + '-image', 'title', titleText)
+    set(loc + '-note', 'innerText', perc)
+  } else if (recommender == 'Similar tags') {
+    set(loc + '-cell', 'style', 'background: darkgreen; color: white; font-weight: bold; font-size: 20px')
+    var titleText = 'Similar tags\n'
+    titleText += globalGameData.get(gameId).name + ' has several tags in common with ' + globalGameData.get(baseGameId).name + '\n'
+    
+
+
+
+
+    set(loc + '-image', 'title', titleText)
+    set(loc + '-note', 'innerText', perc)
+  } else {
+    set(loc + '-cell', 'style', styles[recommender])
+  }
+    
 }
 
 var pageNo = 0 // Global, used for 'back' and 'more' buttons
@@ -70,38 +106,38 @@ function loadImages(gameId) {
       for (var i = 0; i < per_category; i++) {
         if (matches.length == 8) break
         if (gems.length == 0) break
-        matches.push([gems.shift(), 'Hidden gem', '0%']) // TODO: I guess I need to cache the game:tag list, mmk
+        matches.push([gems.shift(), 'Hidden gem', gameId])
       }
     }
     if (r_tags) {
       for (var i = 0; i < per_category; i++) {
         if (matches.length == 8) break
         if (tags.length == 0) break
-        matches.push([tags.shift(), 'Similar tags', '0%']) // TODO: I guess I need to cache the game:tag list, mmk
+        matches.push([tags.shift(), 'Similar tags', gameId])
       }
     }
     if (r_loose) {
       for (var i = 0; i < per_category; i++) {
         if (matches.length == 8) break
         if (loose.length == 0) break
-        matches.push([loose.shift(), 'Loose match'])
+        matches.push([loose.shift(), 'Loose match', gameId])
       }
     }
     if (r_reverse) {
       for (var i = 0; i < per_category; i++) {
         if (matches.length == 8) break
         if (reverse.length == 0) break
-        matches.push([reverse.shift(), 'Reverse match'])
+        matches.push([reverse.shift(), 'Reverse match', gameId])
       }
     }
     for (var i = 0; ; i++) {
       if (matches.length == 8) break
       if (similar.length == 0) break
-      matches.push([similar.shift(), 'Default match'])
+      matches.push([similar.shift(), 'Default match', gameId])
     }
   }
 
-  setImageCard('mm', [gameId, 'Selected'])
+  setImageCard('mm', [gameId, 'Selected', gameId])
   setImageCard('tl', matches[0])
   setImageCard('tm', matches[1])
   setImageCard('tr', matches[2])
@@ -144,26 +180,42 @@ function loadAboutGame(gameId) {
   set('open-web', 'href', `https://store.steampowered.com/app/${gameId}?utm_campaign=divingbell`)
   set('open-app', 'href', `steam://store/${gameId}`)
 
-  /*
   fetch(`bin/html5/bin/data/v2/app_details/${gameId}.txt`)
   .then(r => r.json())
   .then(r => r[gameId].data)
   .then(r => {
     set('short-description', 'innerText', r.short_description)
-    set('price', 'innerText', r.price_overview.final_formatted)
     set('genres', 'innerText', r.genres.map(g => g.description).join(', '))
+
+    var price = 'Unknown'
+    if (r.is_free) price = 'Free'
+    else if (r.price_overview != null) price = r.price_overview.final_formatted
+    set('price', 'innerText', price)
+
     var platforms = []
     if (r.platforms.windows) platforms.push('Windows')
     if (r.platforms.mac)     platforms.push('Mac')
     if (r.platforms.linux)   platforms.push('Linux')
     set('platforms', 'innerText', platforms.join(', '))
     set('categories', 'innerText', r.categories.map(c => c.description).join(', '))
-    set('video', 'src', r.movies[0].webm.max)
-    set('photo-1', 'src', r.screenshots[0].path_full)
-    set('photo-2', 'src', r.screenshots[1].path_full)
-    set('photo-3', 'src', r.screenshots[2].path_full)
+    if (r.movies != null) {
+      set('video', 'display', null)
+      set('video', 'src', r.movies[0].webm.max)
+      set('photo-1', 'src', r.screenshots[0].path_full)
+      set('photo-2', 'src', r.screenshots[1].path_full)
+      set('photo-3', 'src', r.screenshots[2].path_full)
+      set('photo-4', 'display', 'none')
+      set('photo-4', 'src', '')
+    } else {
+      set('video', 'src', '')
+      set('video', 'display', 'none')
+      set('photo-1', 'src', r.screenshots[0].path_full)
+      set('photo-2', 'src', r.screenshots[1].path_full)
+      set('photo-3', 'src', r.screenshots[2].path_full)
+      set('photo-4', 'src', r.screenshots[3].path_full)
+      set('photo-4', 'display', null)
+    }
   })
-  */
 
   var tagNames = Array.from(globalGameData.get(gameId).tags).map(tag => globalTagData[tag].name)
   set('tags', 'innerText', tagNames.join(', '))
@@ -176,6 +228,6 @@ function loadAboutGame(gameId) {
   if (total < 50)       ratingNames = [[0.80, 'Positive'],      [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Negative']]
   else if (total < 500) ratingNames = [[0.80, 'Very Positive'], [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Very Negative']]
   else                  ratingNames = [[0.95, 'Overwhelmingly Positive'], [0.80, 'Very Positive'], [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Overwhelmingly Negative']]
-  var ratingName = ratingNames.find(x => x[0] < perc)[1]
+  var ratingName = ratingNames.find(x => x[0] <= perc)[1]
   set('rating', 'innerText', `${ratingName} (${Math.trunc(100 * perc)}% — ${total} ratings)`)
 }

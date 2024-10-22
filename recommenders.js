@@ -34,18 +34,19 @@ function loose_matches(gameId) {
 // TODO: According to mr. diving bell, "It starts by taking a subset of games that have *at least one matching tag in a major category* and then ranks them all."
 //       so I might need some culling for the actual recommender
 function tag_matches(gameId) {
-  // var importantTags = globalGameData.get(gameId).tags // TODO, what is the rule here?
+  var importantTags = new Set()
+  for (var tag of globalGameData.get(gameId).tags) {
+    if (globalTagData[tag].weight > 4) importantTags.add(tag)
+  }
   var games = []
   for (var [game, data] of globalGameData.entries()) {
     if (game == gameId) continue // Don't recommend the current game
-    // TODO: Other rule here
-    games.push(game)
-    // for (var tag in importantTags) {
-    //   if (data.tags.has(tag)) {
-    //     games.push(game)
-    //     break
-    //   }
-    // }
+    for (var tag of importantTags) {
+      if (data.tags.has(tag)) {
+        games.push(game)
+        break
+      }
+    }
   }
 
   return sort_games_by_tags(games, gameId)
@@ -62,24 +63,11 @@ function gem_matches(gameId) {
   return sort_games_by_tags(games, gameId)
 }
 
+// Used in many places for tie breaks, also used directly for the tag recommender
 function sort_games_by_tags(games, gameId) {
-  var tagWeights = new Array(globalTagData.length).fill(0)
-  for (var tag of globalGameData.get(gameId).tags) {
-    tagWeights[tag] = globalTagData[tag].weight
-  }
-
-  var gameWeights = new Map()
-  for (var game of games) {
-    total = 0
-    weight = 0
-    for (var tag of globalGameData.get(game).tags) {
-      weight += tagWeights[tag]
-      total += globalTagData[tag].weight
-    }
-    gameWeights.set(game, total == 0 ? 0 : weight / total)
-  }
+  var gameWeights = get_game_weights(gameId)
 
   // Inverse sort so that the largest numbers (highest matches) are topmost
-  games.sort((a, b) => Math.sign(gameWeights.get(b) - gameWeights.get(a)))
+  games.sort((a, b) => Math.sign(gameWeights.get(b) - gameWeights.get(a)) || Math.sign(globalGameData.get(a).perc - globalGameData.get(b).perc))
   return games
 }

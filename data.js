@@ -1,4 +1,4 @@
-/** TODO: Rather than using fetch(), all the requisite data here should just be stored in their requisite forms, as js files. **/
+/** TODO: Rather than using fetch(), all the requisite data here should just be stored in their requisite forms, as js files. We might still use fetch() for indvidiual game details, since they're not needed until display time. IDK. **/
 
 var globalGameData = new Map()
 function load_game_data() {
@@ -49,7 +49,6 @@ function load_game_data() {
       gameId = parseInt(gameId)
       if (!globalGameData.has(gameId)) continue // ??? invalid data
       for (var tag of tags.split(',')) {
-        if (isNaN(parseInt(tag))) debugger
         globalGameData.get(gameId).tags.add(parseInt(tag))
       }
     }
@@ -62,7 +61,7 @@ function load_game_data() {
       gameId = parseInt(gameId)
       if (!globalGameData.has(gameId)) continue
       globalGameData.get(gameId).total = total
-      globalGameData.get(gameId).perc = positive / total
+      globalGameData.get(gameId).perc = positive / (total + 1)
     }
   })
   .then(r => fetch('bin/html5/bin/data/v2/reviews/gem.tsv'))
@@ -86,13 +85,18 @@ function load_tag_data() {
   .then(r => {
     for (var line of r.split('\n')) {
       var [tagId, tagName] = line.split('\t')
-      globalTagData.push({'id': tagId, 'name': tagName})
+      globalTagData.push({
+        'id': tagId,
+        'name': tagName,
+        'weight': 1,
+        'category': null,
+      })
     }
   })
   .then(r => fetch('bin/html5/bin/data/v2/tags/categories.tsv'))
   .then(r => r.text())
   .then(r => {
-    var weights = {}
+    var categoryData = new Map()
     for (var line of r.split('\n')) {
       if (line == '') continue
       var categories = line.split('\t')
@@ -102,14 +106,43 @@ function load_tag_data() {
       for (var category of categories) {
         weight = weight * (modifiers[category] || 1) // default to 1, i.e. no change
       }
-      weights[tagId] = weight
+
+      categoryData.set(tagId, {'weight': weight, 'category': categories[0]})
     }
 
     for (var i = 0; i < globalTagData.length; i++) {
-      tagId = globalTagData[i]
-      globalTagData[i]['weight'] = weights[tagId] || 1 // default weight of 1
+      tagId = globalTagData[i].id
+      if (!categoryData.has(tagId)) continue
+      globalTagData[i].weight = categoryData.get(tagId).weight
+      globalTagData[i].category = categoryData.get(tagId).category
     }
     
     return globalTagData
   })
+}
+
+var localGameWeights = new Map()
+function get_game_weights(gameId) {
+  var gameWeights = localGameWeights.get(gameId)
+  if (gameWeights == null) {
+    gameWeights = new Map()
+    var tagWeights = new Array(globalTagData.length).fill(0)
+    for (var tag of globalGameData.get(gameId).tags) {
+      tagWeights[tag] = globalTagData[tag].weight
+    }
+
+    for (var game of globalGameData.keys()) {
+      var total = 0
+      var weight = 0
+      for (var tag of globalGameData.get(game).tags) {
+        weight += tagWeights[tag]
+        total += globalTagData[tag].weight
+      }
+      gameWeights.set(game, total == 0 ? 0 : weight / total)
+    }
+
+    localGameWeights.set(gameId, gameWeights)
+  }
+
+  return gameWeights
 }
