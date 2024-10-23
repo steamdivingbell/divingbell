@@ -59,6 +59,8 @@ function load_game_data() {
     for (var line of r.split('\n')) {
       var [gameId, positive, total] = line.split('\t')
       gameId = parseInt(gameId)
+      positive = parseInt(positive)
+      total = parseInt(total)
       if (!globalGameData.has(gameId)) continue
       globalGameData.get(gameId).total = total
       globalGameData.get(gameId).perc = positive / (total + 1)

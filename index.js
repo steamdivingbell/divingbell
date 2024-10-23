@@ -52,11 +52,11 @@ function setImageCard(loc, data) {
   }
   
   var keys = Array.from(tagData.keys())
-  keys.sort((a, b) => Math.sign(tagData.get(a).weight - tagData.get(b).weight) || a.localeCompare(b))
+  keys.sort((a, b) => Math.sign(tagData.get(b).weight - tagData.get(a).weight) || a.localeCompare(b))
 
   var description = ''
   for (var key of keys) {
-    description += `+${tagData.get(key).weight} for ${key}: {tagData.get(key).tags.join(', ')}\n`
+    description += `+${tagData.get(key).weight} for ${key}: ${tagData.get(key).tags.join(', ')}\n`
   }
 
   if (recommender == 'Hidden gem') {
@@ -72,7 +72,7 @@ function setImageCard(loc, data) {
     var titleText = 'Similar tags\n'
     titleText += globalGameData.get(gameId).name + ' has several tags in common with ' + globalGameData.get(baseGameId).name + '\n'
     
-
+    titleText += description
 
 
 
