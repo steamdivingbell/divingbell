@@ -1,0 +1,47 @@
+Current code (adapted from the blog post)
+1. Load tags/all.tsv
+For each game, cache game: [tags]
+2. Load tags/tags.tsv
+For each tag, cache tagId: tagName
+3. Load tags/categories.tsv
+Each line should be `tag cat1 cat2 cat3...`
+For each category, look up weight:
+{'subgenre': 4, 'viewpoint': 3, 'theme': 2, 'players': 2, 'feature': 2, 'time': 2, 'story': 2, 'genre': 2, 'weak': 0.5}
+Then, multiply the weights of all subcategories.
+Finally, cache the resulting weight for each tag.
+
+Existing code
+1. processTagCategories:
+Load tags/categories.tsv
+Each line should be `tag cat1 cat2 cat3...`
+If any category is 'weak', add the tag ID to weakTags.
+Cache tag:categories in tagToCategories.
+2. isWeak(tag, callback)
+Return true if tag is in weakTags.
+3. getCategoryWeight(category)
+Same lookup table as above.
+
+4. compareCandidates(
+  parent:     Map<String, Array<String>>, // Map of category: tags for each tag for the game.
+  candidate:  Map<String, Array<String>>)
+
+  var totalScore = 0
+
+  var allCategories = parent.keys().concat(candidate.keys()).distinct();
+  for (category in allCategories) {
+    var parentTags = parent.get(category) || [];
+    var candidateTags = candidate.get(category) || [];
+
+    var categoryScore = 0;
+    for (tag in parentTags) {
+      if (candidateTags.has(tag)) categoryScore += 1;
+    }
+
+    var categoryWeight = getCategoryWeight(category);
+    categoryScore *= categoryWeight;
+    
+    totalScore += categoryScore;
+  }
+
+  // and then reporting on the score for this pair of games vs the total possible (based on comparing candidate to itself). 
+}
