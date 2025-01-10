@@ -49,6 +49,8 @@ function tag_matches(gameId) {
     }
   }
 
+  console.info('tag_matches', games)
+
   return sort_games_by_tags(games, gameId)
 }
 
@@ -65,9 +67,7 @@ function gem_matches(gameId) {
 
 // Used in many places for tie breaks, also used directly for the tag recommender
 function sort_games_by_tags(games, gameId) {
-  var gameWeights = get_game_weights(gameId)
-
-  // Inverse sort so that the largest numbers (highest matches) are topmost
-  games.sort((a, b) => Math.sign(gameWeights.get(b) - gameWeights.get(a)) || Math.sign(globalGameData.get(a).perc - globalGameData.get(b).perc))
+  // Inverse sort so that the largest numbers (highest matches) are topmost. Ties broken by % positive rating.
+  games.sort((a, b) => Math.sign(compare_candidates(gameId, b) - compare_candidates(gameId, a)) || Math.sign(globalGameData.get(a).perc - globalGameData.get(b).perc))
   return games
 }

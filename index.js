@@ -42,23 +42,6 @@ function setImageCard(loc, data) {
   set(loc + '-title', 'href', 'https://store.steampowered.com/app/' + gameId) // wait what?
   set(loc + '-image', 'src', 'https://cdn.akamai.steamstatic.com/steam/apps/' + gameId + '/header.jpg')
   
-  // TODO: I wrote this when I was tired. Probably a better way to do it.
-  var tagData = new Map()
-  for (var tagId of globalGameData.get(gameId).tags) {
-    var category = globalTagData[tagId].category
-    if (!tagData.has(category)) tagData.set(category, {'weight': 0, 'tags': []})
-    tagData.get(category).weight += globalTagData[tagId].weight
-    tagData.get(category).tags.push(globalTagData[tagId].name)
-  }
-  
-  var keys = Array.from(tagData.keys())
-  keys.sort((a, b) => Math.sign(tagData.get(b).weight - tagData.get(a).weight) || a.localeCompare(b))
-
-  var description = ''
-  for (var key of keys) {
-    description += `+${tagData.get(key).weight} for ${key}: ${tagData.get(key).tags.join(', ')}\n`
-  }
-
   if (recommender == 'Hidden gem') {
     set(loc + '-cell', 'style', 'background: deepskyblue; color: white; font-weight: bold; font-size: 20px')
     var titleText = 'Hidden gem\n'
@@ -71,10 +54,7 @@ function setImageCard(loc, data) {
     set(loc + '-cell', 'style', 'background: darkgreen; color: white; font-weight: bold; font-size: 20px')
     var titleText = 'Similar tags\n'
     titleText += globalGameData.get(gameId).name + ' has several tags in common with ' + globalGameData.get(baseGameId).name + '\n'
-    
-    titleText += description
-
-
+    titleText += compare_candidates_verbose(baseGameId, gameId)
 
     set(loc + '-image', 'title', titleText)
     set(loc + '-note', 'innerText', perc)

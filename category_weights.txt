@@ -45,3 +45,71 @@ Same lookup table as above.
 
   // and then reporting on the score for this pair of games vs the total possible (based on comparing candidate to itself). 
 }
+
+Example: Witness (210970) + Vanishing of Ethan Carter (258520)
+
+Tags:
+210970 (Witness)
+ID   tagName            categories
+006: firstperson        viewpoint (3)
+029: adventure          genre (2) weak (0.5)
+033: singleplayer       players (2)
+034: difficult          challenge (1)
+041: atmospheric        emotion (1)
+042: story_rich         misc (1) story (2)
+044: great_soundtrack   audio (1)
+045: puzzle             genre (2)
+057: open_world         feature (2)
+065: sandbox            feature (2)
+097: indie              misc (1) weak (0.5)
+123: exploration        feature (2)
+141: mystery            theme (2)
+144: casual             challenge (1)
+172: colorful           visuals (1)
+173: relaxing           emotion (1)
+185: surreal            theme (2)
+240: philisophical      theme (2)
+262: walking_simulator  subgenre (4) story (2)
+304: nonlinear          feature (2)
+
+Shared with 258520 (Ethan Carter)
+006: firstperson        viewpoint (3)
+029: adventure          genre (2) weak (0.5)
+033: singleplayer       players (2)
+041: atmospheric        emotion (1)
+042: story_rich         misc (1) story (2)
+044: great_soundtrack   audio (1)
+045: puzzle             genre (2)
+057: open_world         feature (2)
+097: indie              misc (1) weak (0.5)
+123: exploration        feature (2)
+141: mystery            theme (2)
+262: walking_simulator  subgenre (4) story (2)
+
+
+------
+262: walking_simulator  subgenre (4) story (2)
+057: open_world         feature (2)
+123: exploration        feature (2)
+029: adventure          genre (2) weak (0.5)
+045: puzzle             genre (2)
+006: firstperson        viewpoint (3)
+141: mystery            theme (2)
+033: singleplayer       players (2)
+042: story_rich         misc (1) story (2)
+097: indie              misc (1) weak (0.5)
+044: great_soundtrack   audio (1)
+041: atmospheric        emotion (1)
+
+
+23 of 35 total
+4 Subgenre - Walking Simulator
+4 Feature - Exploration, Open World
+4 Genre - Adventure, Puzzle
+3 Viewpoint - First Person
+2 Theme - Mystery
+2 Players - Singleplayer
+2 Misc - Story Rich, Indie
+1 Emotion - Atmospheric
+1 Audio - Great Soundtrack
+

@@ -388,14 +388,14 @@ class Get
 	private static function filterLowRated(arr:Array<String>, callback:Array<String>->Void)
 	{
 		topRating("10", function(f:Float){
-			var final = [];
+			var final_ = [];
 			for (appid in arr){
 				var score:Float = topScores.get(appid);
 				if (score >= 0.8){
-					final.push(appid);
+					final_.push(appid);
 				}
 			}
-			callback(final);
+			callback(final_);
 		});
 	}
 	

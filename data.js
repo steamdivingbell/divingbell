@@ -1,4 +1,6 @@
-/** TODO: Rather than using fetch(), all the requisite data here should just be stored in their requisite forms, as js files. We might still use fetch() for indvidiual game details, since they're not needed until display time. IDK. **/
+/** TODO: Rather than using fetch(), all the data here should just be stored in their converted forms, as js files.
+ * We might still use fetch() for files with indvidiual game details, if perf turns out to be an issue (but I doubt it).
+**/
 
 var globalGameData = new Map()
 function load_game_data() {
@@ -123,28 +125,39 @@ function load_tag_data() {
   })
 }
 
-var localGameWeights = new Map()
-function get_game_weights(gameId) {
-  var gameWeights = localGameWeights.get(gameId)
-  if (gameWeights == null) {
-    gameWeights = new Map()
-    var tagWeights = new Array(globalTagData.length).fill(0)
-    for (var tag of globalGameData.get(gameId).tags) {
-      tagWeights[tag] = globalTagData[tag].weight
-    }
-
-    for (var game of globalGameData.keys()) {
-      var total = 0
-      var weight = 0
-      for (var tag of globalGameData.get(game).tags) {
-        weight += tagWeights[tag]
-        total += globalTagData[tag].weight
-      }
-      gameWeights.set(game, total == 0 ? 0 : weight / total)
-    }
-
-    localGameWeights.set(gameId, gameWeights)
+function compare_candidates(gameA, gameB) {
+  var tagWeights = new Array(globalTagData.length).fill(0)
+  var total = 0
+  for (var tag of globalGameData.get(gameA).tags) {
+    tagWeights[tag] = globalTagData[tag].weight
+    total += globalTagData[tag].weight
   }
 
-  return gameWeights
+  var weight = 0
+  for (var tag of globalGameData.get(gameB).tags) {
+    weight += tagWeights[tag]
+  }
+
+  return weight / total
+}
+
+function compare_candidates_verbose(gameA, gameB) {
+  // TODO: I wrote this when I was tired. Probably a better way to do it.
+  var tagData = new Map()
+  for (var tagId of globalGameData.get(gameId).tags) {
+    var category = globalTagData[tagId].category
+    if (!tagData.has(category)) tagData.set(category, {'weight': 0, 'tags': []})
+    tagData.get(category).weight += globalTagData[tagId].weight
+    tagData.get(category).tags.push(globalTagData[tagId].name)
+  }
+  
+  var keys = Array.from(tagData.keys())
+  keys.sort((a, b) => Math.sign(tagData.get(b).weight - tagData.get(a).weight) || a.localeCompare(b))
+
+  var description = ''
+  for (var key of keys) {
+    description += `+${tagData.get(key).weight} for ${key}: ${tagData.get(key).tags.join(', ')}\n`
+  }
+
+  return description
 }
