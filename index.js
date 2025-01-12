@@ -80,7 +80,7 @@ function loadImages(gameId) {
   var reverse = reverse_matches(gameId)
   var similar = default_matches(gameId)
 
-  for (var i = 0; i <= pageNo; i++) {
+  for (var page = 0; page <= pageNo; page++) {
     var matches = []
     if (r_gems) {
       for (var i = 0; i < per_category; i++) {

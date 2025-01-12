@@ -30,26 +30,42 @@ function loose_matches(gameId) {
   return sort_games_by_tags(results, gameId)
 }
 
-// "Tags" is not too bad, although it requires a custom weighting which needs to be recomputed for each game. Caching?
-// TODO: According to mr. diving bell, "It starts by taking a subset of games that have *at least one matching tag in a major category* and then ranks them all."
-//       so I might need some culling for the actual recommender
+// "Tags" matches games based solely on % of matching steam tags.
+// However, we only want to recommend similar games, so we require matching tags in some overall categories.
 function tag_matches(gameId) {
-  var importantTags = new Set()
-  for (var tag of globalGameData.get(gameId).tags) {
-    if (globalTagData[tag].weight > 4) importantTags.add(tag)
+  var requiredTags = new Set()
+  // This is also kinda buggy/hacky code, but it's how the original did it. LMAO.
+  for (var category of ['genre', 'theme', 'viewpoint', 'rpg']) {
+    var found = false
+    for (var tag of globalGameData.get(gameId).tags) {
+      var tagData = globalTagData[tag]
+      if (tagData.category == category) {
+        requiredTags.add(tag)
+        console.log('required tag', tagData)
+        found = true
+        break
+      }
+      if (found) break
+    }
   }
+  
+  var weakTags = new Set("action", "adventure", "indie") // from isWeakQuick
+
   var games = []
   for (var [game, data] of globalGameData.entries()) {
     if (game == gameId) continue // Don't recommend the current game
-    for (var tag of importantTags) {
-      if (data.tags.has(tag)) {
-        games.push(game)
+    var hasRequiredTag = false
+    for (var tag of data.tags) {
+      if (globalTagData[tag].
+      if (weakTags.has(tag)) continue
+      if (requiredTags.has(tag)) {
+        hasRequiredTag = true
         break
       }
     }
+    if (!hasRequiredTag) continue
+    if (data.perc > 0.80 && data.total >= 500) games.push(game)
   }
-
-  console.info('tag_matches', games)
 
   return sort_games_by_tags(games, gameId)
 }
@@ -68,6 +84,54 @@ function gem_matches(gameId) {
 // Used in many places for tie breaks, also used directly for the tag recommender
 function sort_games_by_tags(games, gameId) {
   // Inverse sort so that the largest numbers (highest matches) are topmost. Ties broken by % positive rating.
-  games.sort((a, b) => Math.sign(compare_candidates(gameId, b) - compare_candidates(gameId, a)) || Math.sign(globalGameData.get(a).perc - globalGameData.get(b).perc))
+  games.sort((a, b) => Math.sign(compare_candidates(gameId, b) - compare_candidates(gameId, a)) || Math.sign(globalGameData.get(b).perc - globalGameData.get(a).perc))
   return games
+}
+
+function compare_candidates(gameA, gameB) {
+  var tagWeights = new Array(globalTagData.length).fill(0)
+  var total = 0
+  for (var tag of globalGameData.get(gameA).tags) {
+    tagWeights[tag] = globalTagData[tag].weight
+    total += globalTagData[tag].weight
+  }
+
+  var weight = 0
+  for (var tag of globalGameData.get(gameB).tags) {
+    weight += tagWeights[tag]
+  }
+
+  return weight / total
+}
+
+function compare_candidates_verbose(gameA, gameB) {
+  var tagWeights = new Array(globalTagData.length).fill(0)
+  var total = 0
+  for (var tag of globalGameData.get(gameA).tags) {
+    tagWeights[tag] = globalTagData[tag].weight
+    total += globalTagData[tag].weight
+  }
+
+  var tagData = new Map()
+  var weight = 0
+  for (var tagId of globalGameData.get(gameB).tags) {
+    if (tagWeights[tagId] == 0) continue
+    var category = globalTagData[tagId].category
+    if (!tagData.has(category)) tagData.set(category, {'weight': 0, 'tags': []})
+    weight += globalTagData[tagId].weight
+    tagData.get(category).weight += globalTagData[tagId].weight
+    tagData.get(category).tags.push(globalTagData[tagId].name)
+  }
+  
+  var categories = Array.from(tagData.keys())
+  categories.sort((a, b) => Math.sign(tagData.get(b).weight - tagData.get(a).weight) || a.localeCompare(b))
+
+  var description = ''
+  for (var category of categories) {
+    description += `+${tagData.get(category).weight} for ${category}: ${tagData.get(category).tags.join(', ')}\n`
+  }
+
+  description += `${weight} out of ${total}: ${Math.round(100 * weight / total)}% match\n`
+
+  return description
 }

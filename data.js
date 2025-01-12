@@ -94,6 +94,7 @@ function load_tag_data() {
         'name': tagName,
         'weight': 1,
         'category': null,
+        'isWeak': false,
       })
     }
   })
@@ -105,10 +106,11 @@ function load_tag_data() {
       if (line == '') continue
       var categories = line.split('\t')
       var tagId = categories.shift()
-      var modifiers = {'subgenre': 4, 'viewpoint': 3, 'theme': 2, 'players': 2, 'feature': 2, 'time': 2, 'story': 2, 'genre': 2, 'weak': 0.5}
+      var modifiers = {'subgenre': 4, 'viewpoint': 3, 'theme': 2, 'players': 2, 'feature': 2, 'time': 2, 'story': 2, 'genre': 2} //, 'weak': 0.5}
       var weight = 1
       for (var category of categories) {
         weight = weight * (modifiers[category] || 1) // default to 1, i.e. no change
+        break // "bug"
       }
 
       categoryData.set(tagId, {'weight': weight, 'category': categories[0]})
@@ -123,41 +125,4 @@ function load_tag_data() {
     
     return globalTagData
   })
-}
-
-function compare_candidates(gameA, gameB) {
-  var tagWeights = new Array(globalTagData.length).fill(0)
-  var total = 0
-  for (var tag of globalGameData.get(gameA).tags) {
-    tagWeights[tag] = globalTagData[tag].weight
-    total += globalTagData[tag].weight
-  }
-
-  var weight = 0
-  for (var tag of globalGameData.get(gameB).tags) {
-    weight += tagWeights[tag]
-  }
-
-  return weight / total
-}
-
-function compare_candidates_verbose(gameA, gameB) {
-  // TODO: I wrote this when I was tired. Probably a better way to do it.
-  var tagData = new Map()
-  for (var tagId of globalGameData.get(gameId).tags) {
-    var category = globalTagData[tagId].category
-    if (!tagData.has(category)) tagData.set(category, {'weight': 0, 'tags': []})
-    tagData.get(category).weight += globalTagData[tagId].weight
-    tagData.get(category).tags.push(globalTagData[tagId].name)
-  }
-  
-  var keys = Array.from(tagData.keys())
-  keys.sort((a, b) => Math.sign(tagData.get(b).weight - tagData.get(a).weight) || a.localeCompare(b))
-
-  var description = ''
-  for (var key of keys) {
-    description += `+${tagData.get(key).weight} for ${key}: ${tagData.get(key).tags.join(', ')}\n`
-  }
-
-  return description
 }

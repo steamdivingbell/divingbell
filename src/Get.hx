@@ -359,8 +359,10 @@ class Get
 			return;
 		}
 		tagsFor(appid, function(parentTags:Array<String>){
+      trace("tagsFor", appid);
 			tagProfile(parentTags, function(parentProfile:Map<String,Array<String>>){
 				for (otherApp in arr){
+          trace("otherApp", appid, arr);
 					tagsFor(otherApp, function(otherTags:Array<String>){
 						tagProfile(otherTags, function(otherProfile:Map<String,Array<String>>){
 							var score = compareCandidates(appid, otherApp, parentProfile, otherProfile);
@@ -374,6 +376,7 @@ class Get
 								});
 								var results = new MatchResults();
 								for (cand in candidates){
+                  if (cand.appid == "244430") { trace("hello", cand.score); }
 									results.add(cand.appid, cand.score);
 								}
 								callback(results);
@@ -938,6 +941,7 @@ class Get
 					return finals;
 				}
 				
+        js.Lib.debug();
 				var genres =    check(profile.get("genre"));
 				var theme     = check(profile.get("theme"));
 				var viewpoint = check(profile.get("viewpoint"));
