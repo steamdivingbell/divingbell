@@ -106,14 +106,23 @@ function load_tag_data() {
       if (line == '') continue
       var categories = line.split('\t')
       var tagId = categories.shift()
-      var modifiers = {'subgenre': 4, 'viewpoint': 3, 'theme': 2, 'players': 2, 'feature': 2, 'time': 2, 'story': 2, 'genre': 2} //, 'weak': 0.5}
-      var weight = 1
+
+      // Tags are associated with their heaviest category
+      var categoryWeights = {'subgenre': 4, 'viewpoint': 3, 'theme': 2, 'players': 2, 'feature': 2, 'time': 2, 'story': 2, 'genre': 2}
+      var bestCategory = null
+      var weight = 0
       for (var category of categories) {
-        weight = weight * (modifiers[category] || 1) // default to 1, i.e. no change
-        break // "bug"
+        if (categoryWeights[category] > weight) {
+          weight = categoryWeights[category]
+          bestCategory = category
+        }
       }
 
-      categoryData.set(tagId, {'weight': weight, 'category': categories[0]})
+      categoryData.set(tagId, {
+        'weight': weight,
+        'category': bestCategory,
+        'isWeak': categories.includes('weak'),
+      })
     }
 
     for (var i = 0; i < globalTagData.length; i++) {
@@ -121,6 +130,7 @@ function load_tag_data() {
       if (!categoryData.has(tagId)) continue
       globalTagData[i].weight = categoryData.get(tagId).weight
       globalTagData[i].category = categoryData.get(tagId).category
+      globalTagData[i].isWeak = categoryData.get(tagId).isWeak
     }
     
     return globalTagData

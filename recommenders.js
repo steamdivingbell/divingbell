@@ -30,41 +30,37 @@ function loose_matches(gameId) {
   return sort_games_by_tags(results, gameId)
 }
 
+// These were the original 'culledTags', although I might change them at some point.
+var REQUIRED_CATEGORY_MATCHES = new Set(['genre', 'theme', 'viewpoint', 'rpg'])
+
 // "Tags" matches games based solely on % of matching steam tags.
 // However, we only want to recommend similar games, so we require matching tags in some overall categories.
 function tag_matches(gameId) {
   var requiredTags = new Set()
-  // This is also kinda buggy/hacky code, but it's how the original did it. LMAO.
-  for (var category of ['genre', 'theme', 'viewpoint', 'rpg']) {
-    var found = false
-    for (var tag of globalGameData.get(gameId).tags) {
-      var tagData = globalTagData[tag]
-      if (tagData.category == category) {
-        requiredTags.add(tag)
-        console.log('required tag', tagData)
-        found = true
-        break
-      }
-      if (found) break
+  var requiredCategories = new Set()
+  for (var tag of globalGameData.get(gameId).tags) {
+    var tagData = globalTagData[tag]
+    if (tagData.isWeak) continue
+    if (REQUIRED_CATEGORY_MATCHES.has(tagData.category)) {
+      requiredTags.add(tag)
+      requiredCategories.add(tagData.category)
     }
   }
-  
-  var weakTags = new Set("action", "adventure", "indie") // from isWeakQuick
 
   var games = []
   for (var [game, data] of globalGameData.entries()) {
     if (game == gameId) continue // Don't recommend the current game
-    var hasRequiredTag = false
+    if (data.perc < 0.80 || data.total < 500) continue // Don't recommend poorly-rated games
+
+    // Ensure that this game matches at least one tag in each category
+    var missingCategories = new Set(requiredCategories)
     for (var tag of data.tags) {
-      if (globalTagData[tag].
-      if (weakTags.has(tag)) continue
       if (requiredTags.has(tag)) {
-        hasRequiredTag = true
-        break
+        missingCategories.delete(globalTagData[tag].category)
+        if (missingCategories.length === 0) break
       }
     }
-    if (!hasRequiredTag) continue
-    if (data.perc > 0.80 && data.total >= 500) games.push(game)
+    if (missingCategories.length === 0) games.add(game)
   }
 
   return sort_games_by_tags(games, gameId)
