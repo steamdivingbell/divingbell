@@ -45,16 +45,18 @@ function setImageCard(loc, data) {
   if (recommender == 'Hidden gem') {
     set(loc + '-cell', 'style', 'background: deepskyblue; color: white; font-weight: bold; font-size: 20px')
     var titleText = 'Hidden gem\n'
-    titleText += globalGameData.get(gameId).name + ' is a highly-rated but little-known game'
-    // TODO: I guess I need some way to look up the matching tag list, probably just cache it idk
-    var perc = '55%'
+    titleText += globalGameData.get(gameId).name + ' is a highly-rated but little-known game\n'
+    titleText += compare_candidates_verbose(baseGameId, gameId)
     set(loc + '-image', 'title', titleText)
+
+    var perc = Math.round(100 * compare_candidates(baseGameId, gameId)) + '%'
     set(loc + '-note', 'innerText', perc)
   } else if (recommender == 'Similar tags') {
     set(loc + '-cell', 'style', 'background: darkgreen; color: white; font-weight: bold; font-size: 20px')
     var titleText = 'Similar tags\n'
     titleText += globalGameData.get(gameId).name + ' has several tags in common with ' + globalGameData.get(baseGameId).name + '\n'
     titleText += compare_candidates_verbose(baseGameId, gameId)
+    var perc = Math.round(100 * compare_candidates(baseGameId, gameId)) + '%'
 
     set(loc + '-image', 'title', titleText)
     set(loc + '-note', 'innerText', perc)
@@ -205,9 +207,13 @@ function loadAboutGame(gameId) {
 
   // Rating names according to https://reddit.com/r/Steam/comments/ivz45n/
   var ratingNames = []
-  if (total < 50)       ratingNames = [[0.80, 'Positive'],      [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Negative']]
-  else if (total < 500) ratingNames = [[0.80, 'Very Positive'], [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Very Negative']]
-  else                  ratingNames = [[0.95, 'Overwhelmingly Positive'], [0.80, 'Very Positive'], [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Overwhelmingly Negative']]
+  if (total < 50) {
+    ratingNames = [[0.80, 'Positive'],      [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Negative']]
+  } else if (total < 500) {
+    ratingNames = [[0.80, 'Very Positive'], [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Very Negative']]
+  } else {
+    ratingNames = [[0.95, 'Overwhelmingly Positive'], [0.80, 'Very Positive'], [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Overwhelmingly Negative']]
+  }
   var ratingName = ratingNames.find(x => x[0] <= perc)[1]
   set('rating', 'innerText', `${ratingName} (${Math.trunc(100 * perc)}% — ${total} ratings)`)
 }

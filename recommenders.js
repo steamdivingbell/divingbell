@@ -57,10 +57,10 @@ function tag_matches(gameId) {
     for (var tag of data.tags) {
       if (requiredTags.has(tag)) {
         missingCategories.delete(globalTagData[tag].category)
-        if (missingCategories.length === 0) break
+        if (missingCategories.size === 0) break
       }
     }
-    if (missingCategories.length === 0) games.add(game)
+    if (missingCategories.size === 0) games.push(game)
   }
 
   return sort_games_by_tags(games, gameId)
@@ -84,50 +84,71 @@ function sort_games_by_tags(games, gameId) {
   return games
 }
 
+// My version of chrome is very old.
+Set.prototype.union = Set.prototype.union || function(other) {
+  var output = new Set(this)
+  for (var elem of other) output.add(elem)
+  return output
+}
+
+Set.prototype.intersection = Set.prototype.intersection || function(other) {
+  var output = new Set()
+  for (var elem of other) {
+    if (this.has(elem)) output.add(elem)
+  }
+  return output
+}
+
 function compare_candidates(gameA, gameB) {
-  var tagWeights = new Array(globalTagData.length).fill(0)
-  var total = 0
-  for (var tag of globalGameData.get(gameA).tags) {
-    tagWeights[tag] = globalTagData[tag].weight
-    total += globalTagData[tag].weight
+  var tagsA = globalGameData.get(gameA).tags
+  var tagsB = globalGameData.get(gameB).tags
+
+  var totalWeight = 0
+  for (var tag of tagsA.union(tagsB)) {
+    totalWeight += globalTagData[tag].weight
   }
 
-  var weight = 0
-  for (var tag of globalGameData.get(gameB).tags) {
-    weight += tagWeights[tag]
+  var matchWeight = 0
+  for (var tag of tagsA.intersection(tagsB)) {
+    matchWeight += globalTagData[tag].weight
   }
 
-  return weight / total
+  return matchWeight / totalWeight
 }
 
 function compare_candidates_verbose(gameA, gameB) {
-  var tagWeights = new Array(globalTagData.length).fill(0)
-  var total = 0
-  for (var tag of globalGameData.get(gameA).tags) {
-    tagWeights[tag] = globalTagData[tag].weight
-    total += globalTagData[tag].weight
+  var tagsA = globalGameData.get(gameA).tags
+  var tagsB = globalGameData.get(gameB).tags
+  var tagData = new Map()
+
+  var totalWeight = 0
+  for (var tag of tagsA.union(tagsB)) {
+    totalWeight += globalTagData[tag].weight
+    var category = globalTagData[tag].category
+    if (category != null && !tagData.has(category)) tagData.set(category, {'weight': 0, 'tags': []})
   }
 
-  var tagData = new Map()
-  var weight = 0
-  for (var tagId of globalGameData.get(gameB).tags) {
-    if (tagWeights[tagId] == 0) continue
-    var category = globalTagData[tagId].category
-    if (!tagData.has(category)) tagData.set(category, {'weight': 0, 'tags': []})
-    weight += globalTagData[tagId].weight
-    tagData.get(category).weight += globalTagData[tagId].weight
-    tagData.get(category).tags.push(globalTagData[tagId].name)
+  var matchWeight = 0
+  for (var tag of tagsA.intersection(tagsB)) {
+    matchWeight += globalTagData[tag].weight
+    var category = globalTagData[tag].category
+    if (tagData.has(category)) {
+      tagData.get(category).weight += globalTagData[tag].weight
+      tagData.get(category).tags.push(globalTagData[tag].name)
+    }
   }
-  
+
+  // Sort largest categories first, then alphabetical
   var categories = Array.from(tagData.keys())
   categories.sort((a, b) => Math.sign(tagData.get(b).weight - tagData.get(a).weight) || a.localeCompare(b))
 
   var description = ''
   for (var category of categories) {
+    tagData.get(category).tags.sort((a, b) => a.localeCompare(b))
     description += `+${tagData.get(category).weight} for ${category}: ${tagData.get(category).tags.join(', ')}\n`
   }
 
-  description += `${weight} out of ${total}: ${Math.round(100 * weight / total)}% match\n`
+  description += `${matchWeight} shared tags out of all ${totalWeight} tags: ${Math.round(100 * matchWeight / totalWeight)}% match\n`
 
   return description
 }
