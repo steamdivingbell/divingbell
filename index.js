@@ -44,10 +44,10 @@ function setImageCard(loc, data) {
   set(loc + '-title', 'innerText', recommender)
   set(loc + '-title', 'href', 'https://store.steampowered.com/app/' + gameId) // wait what?
   set(loc + '-image', 'src', 'https://cdn.akamai.steamstatic.com/steam/apps/' + gameId + '/header.jpg')
-  
+
   var gameName = globalGameData.get(gameId).name
   var baseGameName = globalGameData.get(baseGameId).name
-  
+
   var titleText = {
     'Selected': ``,
     'Hidden gem': `Hidden gem
@@ -60,12 +60,13 @@ ${compare_candidates_verbose(baseGameId, gameId)}`,
 ${gameName} is a loose "more like this" match for ${baseGameName}.
 It is commonly recommended by games which are recommended by ${baseGameName}.`,
     'Reverse match': `Reverse match
-${baseGameName} is recommended by ${gameName}.`,
+${gameName} is a reverse "more like this" match for ${baseGameName},
+i.e. ${baseGameName} is recommended by ${gameName}.`,
     'Default match': `Default match
-${gameName} is recommended by ${baseGameName}.`,
+${gameName} is a "default" match, since it is directly recommended by ${baseGameName}.`,
   }[recommender]
   set(loc + '-image', 'title', titleText)
-  
+
   if (recommender == 'Hidden gem' || recommender == 'Similar tags') {
     var perc = Math.round(100 * compare_candidates(baseGameId, gameId)) + '%'
     set(loc + '-note', 'innerText', perc)
@@ -171,7 +172,7 @@ function setupButtons(gameId) {
     } else {
       this.className = 'toggle'
     }
-    
+
     loadImages(gameId)
   }
 
@@ -179,7 +180,7 @@ function setupButtons(gameId) {
   set('r_tags', 'onpointerdown', toggleRecommender)
   set('r_loose', 'onpointerdown', toggleRecommender)
   set('r_reverse', 'onpointerdown', toggleRecommender)
-  
+
   set('back', 'onpointerdown', () => {
     pageNo = (pageNo > 0 ? pageNo - 1 : 0)
     loadImages(gameId)
@@ -198,58 +199,32 @@ function loadAboutGame(gameId) {
   set('open-web', 'href', `https://store.steampowered.com/app/${gameId}?utm_campaign=divingbell`)
   set('open-app', 'href', `steam://store/${gameId}`)
 
-  fetch(`bin/html5/bin/data/v2/app_details/${gameId}.txt`)
-  .then(r => r.json())
-  .then(r => r[gameId].data)
+  loadGameDetails(gameId)
   .then(r => {
-    set('short-description', 'innerText', r.short_description)
-    set('genres', 'innerText', r.genres.map(g => g.description).join(', '))
+    set('short-description', 'innerText', r.description)
+    set('genres', 'innerText', r.genres.join(', '))
+    set('price', 'innerText', r.price)
+    set('platforms', 'innerText', r.platforms.join(', '))
+    set('categories', 'innerText', r.categories.join(', '))
+    set('tags', 'innerText', r.tags.join(', '))
+    set('rating', 'innerText', r.ratingText)
 
-    var price = 'Unknown'
-    if (r.is_free) price = 'Free'
-    else if (r.price_overview != null) price = r.price_overview.final_formatted
-    set('price', 'innerText', price)
-
-    var platforms = []
-    if (r.platforms.windows) platforms.push('Windows')
-    if (r.platforms.mac)     platforms.push('Mac')
-    if (r.platforms.linux)   platforms.push('Linux')
-    set('platforms', 'innerText', platforms.join(', '))
-    set('categories', 'innerText', r.categories.map(c => c.description).join(', '))
-    if (r.movies != null) {
+    if (r.video != null) {
       set('video', 'display', null)
-      set('video', 'src', r.movies[0].webm.max)
-      set('photo-1', 'src', r.screenshots[0].path_full)
-      set('photo-2', 'src', r.screenshots[1].path_full)
-      set('photo-3', 'src', r.screenshots[2].path_full)
+      set('video', 'src', r.video)
+      set('photo-1', 'src', r.photos[0])
+      set('photo-2', 'src', r.photos[1])
+      set('photo-3', 'src', r.photos[2])
       set('photo-4', 'display', 'none')
       set('photo-4', 'src', '')
     } else {
       set('video', 'src', '')
       set('video', 'display', 'none')
-      set('photo-1', 'src', r.screenshots[0].path_full)
-      set('photo-2', 'src', r.screenshots[1].path_full)
-      set('photo-3', 'src', r.screenshots[2].path_full)
-      set('photo-4', 'src', r.screenshots[3].path_full)
+      set('photo-1', 'src', r.photos[0])
+      set('photo-2', 'src', r.photos[1])
+      set('photo-3', 'src', r.photos[2])
+      set('photo-4', 'src', r.photos[3])
       set('photo-4', 'display', null)
     }
   })
-
-  var tagNames = Array.from(globalGameData.get(gameId).tags).map(tag => globalTagData[tag].name)
-  set('tags', 'innerText', tagNames.join(', '))
-
-  var perc = globalGameData.get(gameId).perc
-  var total = globalGameData.get(gameId).total
-
-  // Rating names according to https://reddit.com/r/Steam/comments/ivz45n/
-  var ratingNames = []
-  if (total < 50) {
-    ratingNames = [[0.80, 'Positive'],      [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Negative']]
-  } else if (total < 500) {
-    ratingNames = [[0.80, 'Very Positive'], [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Very Negative']]
-  } else {
-    ratingNames = [[0.95, 'Overwhelmingly Positive'], [0.80, 'Very Positive'], [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Overwhelmingly Negative']]
-  }
-  var ratingName = ratingNames.find(x => x[0] <= perc)[1]
-  set('rating', 'innerText', `${ratingName} (${Math.trunc(100 * perc)}% — ${total} ratings)`)
 }

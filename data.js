@@ -75,7 +75,7 @@ function load_game_data() {
       var [gameId, gemRating] = line.split('\t')
       gameId = parseInt(gameId)
       if (!globalGameData.has(gameId)) continue
-      
+
       // TODO: Probably similar to https://steamdb.info/blog/steamdb-rating/#javascript-implementation but there seems to be some weighting for fewer reviews?
       globalGameData.get(gameId).gemRating = parseInt(gemRating)
     }
@@ -132,13 +132,13 @@ function load_tag_data() {
       globalTagData[i].category = categoryData.get(tagId).category
       globalTagData[i].isWeak = categoryData.get(tagId).isWeak
     }
-    
+
     return globalTagData
   })
 }
 
-function loadGameDetails(gameId, callback) {
-  fetch(`bin/html5/bin/data/v2/app_details/${gameId}.txt`)
+function loadGameDetails(gameId) {
+  return fetch(`bin/html5/bin/data/v2/app_details/${gameId}.txt`)
   .then(r => r.json())
   .then(r => r[gameId].data)
   .then(r => {
@@ -148,8 +148,9 @@ function loadGameDetails(gameId, callback) {
       'price': 'Unknown',
       'platforms': [],
       'categories': r.categories.map(c => c.description),
+      'tags': Array.from(globalGameData.get(gameId).tags).map(tag => globalTagData[tag].name),
       'video': r.movies[0].webm.max,
-      'photos': [r.screenshots.map(s => s.path_full)],
+      'photos': r.screenshots.map(s => s.path_full),
     }
 
     if (r.is_free) gameDetails.price = 'Free'
@@ -160,6 +161,21 @@ function loadGameDetails(gameId, callback) {
     if (r.platforms.mac)     gameDetails.platforms.push('Mac')
     if (r.platforms.linux)   gameDetails.platforms.push('Linux')
 
-    callback(gameDetails)
+    var perc = globalGameData.get(gameId).perc
+    var total = globalGameData.get(gameId).total
+
+    // Rating names according to https://reddit.com/r/Steam/comments/ivz45n/
+    var ratingNames = []
+    if (total < 50) {
+      ratingNames = [[0.80, 'Positive'],      [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Negative']]
+    } else if (total < 500) {
+      ratingNames = [[0.80, 'Very Positive'], [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Very Negative']]
+    } else {
+      ratingNames = [[0.95, 'Overwhelmingly Positive'], [0.80, 'Very Positive'], [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Overwhelmingly Negative']]
+    }
+    var ratingName = ratingNames.find(x => x[0] <= perc)[1]
+    gameDetails['ratingText'] = `${ratingName} (${Math.trunc(100 * perc)}% — ${total} ratings)`
+
+    return gameDetails
   })
 }

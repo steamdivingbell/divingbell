@@ -42,7 +42,7 @@ function reverse_matches(gameId) {
 function loose_matches(gameId) {
   var siblings = globalGameData.get(gameId).similar
   var games = new Set()
-  
+
   // Add all second-generation siblings, if they're not immediate siblings and also not us.
   for (var sibling of siblings) {
     for (var grandSibling of globalGameData.get(sibling).similar) {
@@ -53,7 +53,7 @@ function loose_matches(gameId) {
       games.add(grandSibling)
     }
   }
-  
+
   return sort_games_by_tags(Array.from(games), gameId)
 }
 
