@@ -31,10 +31,10 @@ function load_game_data() {
         if (line == '') continue
         var [gameId, similarGames] = line.split('\t')
         gameId = parseInt(gameId)
-        if (!globalGameData.has(gameId)) continue // ??? invalid data
+        if (!globalGameData.has(gameId)) continue
         for (var similarGame of similarGames.split(',')) {
           similarGame = parseInt(similarGame)
-          if (!globalGameData.has(similarGame)) continue // ??? invalid data
+          if (!globalGameData.has(similarGame)) continue
 
           globalGameData.get(gameId).similar.add(similarGame)
           globalGameData.get(similarGame).reverse.add(gameId)
@@ -49,7 +49,7 @@ function load_game_data() {
       var [gameId, tags] = line.split('\t')
       if (tags == '') continue
       gameId = parseInt(gameId)
-      if (!globalGameData.has(gameId)) continue // ??? invalid data
+      if (!globalGameData.has(gameId)) continue
       for (var tag of tags.split(',')) {
         globalGameData.get(gameId).tags.add(parseInt(tag))
       }
@@ -76,7 +76,8 @@ function load_game_data() {
       gameId = parseInt(gameId)
       if (!globalGameData.has(gameId)) continue
 
-      // TODO: Probably similar to https://steamdb.info/blog/steamdb-rating/#javascript-implementation but there seems to be some weighting for fewer reviews?
+      // TODO: I have no idea how this number is calculated -- but it should be possible to reverse-engineer the formula.
+      // It's possible that it's using https://steamdb.info/blog/steamdb-rating/#javascript-implementation (or something similar)?
       globalGameData.get(gameId).gemRating = parseInt(gemRating)
     }
   })
@@ -149,7 +150,6 @@ function loadGameDetails(gameId) {
       'platforms': [],
       'categories': r.categories.map(c => c.description),
       'tags': Array.from(globalGameData.get(gameId).tags).map(tag => globalTagData[tag].name),
-      'video': r.movies[0].webm.max,
       'photos': r.screenshots.map(s => s.path_full),
     }
 
@@ -160,6 +160,8 @@ function loadGameDetails(gameId) {
     if (r.platforms.windows) gameDetails.platforms.push('Windows')
     if (r.platforms.mac)     gameDetails.platforms.push('Mac')
     if (r.platforms.linux)   gameDetails.platforms.push('Linux')
+
+    if (r.movies != null && r.movies.length > 0) gameDetails['video'] = r.movies[0].webm.max
 
     var perc = globalGameData.get(gameId).perc
     var total = globalGameData.get(gameId).total

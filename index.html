@@ -24,9 +24,19 @@
       font-family: Roboto, sans-serif;
       font-weight: bold;
       font-size: 25px;
-      color: black;
       background: white;
+      color: black;
       cursor: pointer;
+    }
+    
+    .navigation-disabled {
+      padding: 5 25 5 25;
+      font-family: Roboto, sans-serif;
+      font-weight: bold;
+      font-size: 25px;
+      background: white;
+      color: gray;
+      cursor: default;
     }
 
     .toggle, .toggle-off {
@@ -101,12 +111,12 @@
       </div>
     </div>
     <div id="rightside" style="flex-basis: 50%; display: block; padding: 0.5em">
-      <a href="https://www.fortressofdoors.com/steam-diving-bell/">What is this webpage? How does it work?</a>
+      <a target="_blank" href="https://www.fortressofdoors.com/steam-diving-bell/">What is this webpage? How does it work?</a>
       <hr width="100%">
       <div id="title-and-links" style="display: flex">
         <h1 id="game-title" style="flex-grow: 1"></h1>
-        <a id="open-web" href="_blank" class="steamlink" style="margin: auto 5 auto 5">Open on the web</a>
-        <a id="open-app" href="_blank" class="steamlink" style="margin: auto 5 auto 5">Open in steam</a>
+        <a id="open-web" target="_blank" class="steamlink" style="margin: auto 5 auto 5">Open on the web</a>
+        <a id="open-app" class="steamlink" style="margin: auto 5 auto 5">Open in steam</a>
       </div>
       
       <span id="short-description"></span>

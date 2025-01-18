@@ -1,11 +1,16 @@
 window.onload = function() {
   // For local development, run chrome with --allow-file-access-from-files
   // I might be able to work around that at some point by using actual JS files.
+  // Outstanding ideas from Mr. diving bell:
+  // - Require games to include tag 'X'
+  // - Require games to exclude tag 'Y'
+  // - Make it easier to pick a starting game
 
   Promise.all([load_game_data(), load_tag_data()])
-  .then(r => loadAboutGame(210970))
-  .then(r => loadImages(210970))
-  .then(r => setupButtons(210970))
+  .then(r => setActiveGame(210970))
+  .then(r => {
+    
+  })
 }
 
 function set(id, key, value) {
@@ -13,12 +18,12 @@ function set(id, key, value) {
   if (key == 'innerText') {
     elem.innerText = value
   } else if (key == 'hover') {
-    elem.addEventListener('mouseenter', () => {
+    elem.onmouseenter = () => {
       var timer = setTimeout(value, 1000)
-      elem.addEventListener('mouseleave', () => { clearTimeout(timer) })
-    })
-  } else if (key == 'onpointerdown') {
-    elem.addEventListener('pointerdown', value)
+      elem.onmouseleave = () => { clearTimeout(timer) }
+    }
+  } else if (key == 'click') {
+    elem.onpointerdown = value
   } else if (key == 'style') {
     elem.style = value
   } else if (key == 'display') {
@@ -26,6 +31,14 @@ function set(id, key, value) {
   } else {
     elem.setAttribute(key, value)
   }
+}
+
+var previousGames = [] // Keep track of previous games so that we can use the 'back' button to go back.
+function setActiveGame(gameId) {
+  loadAboutGame(gameId)
+  pageNo = 0 // Reset back to the first page of results
+  loadImages(gameId)
+  setupButtons(gameId)
 }
 
 var styles = {
@@ -40,9 +53,10 @@ var styles = {
 function setImageCard(loc, data) {
   var [gameId, recommender, baseGameId] = data
   set(loc + '-cell', 'hover', () => loadAboutGame(gameId))
+  set(loc + '-cell', 'click', () => { previousGames.push(baseGameId); setActiveGame(gameId) })
   set(loc + '-cell', 'style', styles[recommender])
   set(loc + '-title', 'innerText', recommender)
-  set(loc + '-title', 'href', 'https://store.steampowered.com/app/' + gameId) // wait what?
+  set(loc + '-title', 'href', 'https://store.steampowered.com/app/' + gameId)
   set(loc + '-image', 'src', 'https://cdn.akamai.steamstatic.com/steam/apps/' + gameId + '/header.jpg')
 
   var gameName = globalGameData.get(gameId).name
@@ -163,6 +177,26 @@ function loadImages(baseGameId) {
   setImageCard('bm', matches[5])
   setImageCard('bl', matches[6])
   setImageCard('ml', matches[7])
+  
+  // Setup alt text for the various dynamic buttons
+  set('r_gems', 'title', (r_gems ? 'Disable' : 'Enable') + ' the "Gems" recommender')
+  set('r_tags', 'title', (r_tags ? 'Disable' : 'Enable') + ' the "Tags" recommender')
+  set('r_loose', 'title', (r_loose ? 'Disable' : 'Enable') + ' the "Loose" recommender')
+  set('r_reverse', 'title', (r_reverse ? 'Disable' : 'Enable') + ' the "Reverse" recommender')
+
+  if (pageNo > 0) { // If there are still previous pages
+    set('back', 'title', `Previous results for ${globalGameData.get(baseGameId).name}`)
+    set('back', 'class', 'navigation')
+  } else if (previousGames.length > 0) { // Otherwise, this button goes back to the previous game
+    var previousGame = previousGames[previousGames.length - 1]
+    set('back', 'title', `Back to results for ${globalGameData.get(previousGame).name}`)
+    set('back', 'class', 'navigation')
+  } else {
+    set('back', 'title', '')
+    set('back', 'class', 'navigation-disabled')
+  }
+
+  set('more', 'title', `More results for ${globalGameData.get(baseGameId).name}`)
 }
 
 function setupButtons(gameId) {
@@ -176,21 +210,25 @@ function setupButtons(gameId) {
     loadImages(gameId)
   }
 
-  set('r_gems', 'onpointerdown', toggleRecommender)
-  set('r_tags', 'onpointerdown', toggleRecommender)
-  set('r_loose', 'onpointerdown', toggleRecommender)
-  set('r_reverse', 'onpointerdown', toggleRecommender)
+  set('r_gems', 'click', toggleRecommender)
+  set('r_tags', 'click', toggleRecommender)
+  set('r_loose', 'click', toggleRecommender)
+  set('r_reverse', 'click', toggleRecommender)
 
-  set('back', 'onpointerdown', () => {
-    pageNo = (pageNo > 0 ? pageNo - 1 : 0)
-    loadImages(gameId)
+  set('back', 'click', () => {
+    if (pageNo > 0) { // If there are previous pages of results, go to them
+      pageNo--
+      loadImages(gameId)
+    } else if (previousGames.length > 0) { // Otherwise, go back to the previous game
+      setActiveGame(previousGames.pop())
+    }
   })
-  set('more', 'onpointerdown', () => {
+  set('more', 'click', () => {
     pageNo++
     loadImages(gameId)
   })
 }
-
+  
 function loadAboutGame(gameId) {
   if (document.getElementById('open-app').href  == `steam://store/${gameId}`) return // Already selected
 

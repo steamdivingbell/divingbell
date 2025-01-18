@@ -22,7 +22,6 @@ Set.prototype.difference = Set.prototype.difference || function(other) {
 }
 
 // "Default", aka more like this: https://store.steampowered.com/recommended/morelike/app/210970
-// This might need some revamping in the new system, since there's now (9 + 6 + 3 + 9) games listed on the store page.
 function default_matches(gameId) {
   return Array.from(globalGameData.get(gameId).similar)
 }
