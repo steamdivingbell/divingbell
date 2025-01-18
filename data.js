@@ -78,7 +78,7 @@ function load_game_data() {
 
       // TODO: I have no idea how this number is calculated -- but it should be possible to reverse-engineer the formula.
       // It's possible that it's using https://steamdb.info/blog/steamdb-rating/#javascript-implementation (or something similar)?
-      globalGameData.get(gameId).gemRating = parseInt(gemRating)
+      globalGameData.get(gameId).gemRating = parseFloat(gemRating)
     }
   })
 }

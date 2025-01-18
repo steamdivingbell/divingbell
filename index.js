@@ -9,7 +9,9 @@ window.onload = function() {
   Promise.all([load_game_data(), load_tag_data()])
   .then(r => setActiveGame(210970))
   .then(r => {
-    
+    var games = Array.from(globalGameData.keys())
+    games.sort((a, b) => globalGameData.get(b).gemRating - globalGameData.get(a).gemRating)
+    debugger;
   })
 }
 
