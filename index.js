@@ -14,7 +14,7 @@ function set(id, key, value) {
     elem.innerText = value
   } else if (key == 'hover') {
     elem.addEventListener('mouseenter', () => {
-      var timer = setTimeout(value, 2000)
+      var timer = setTimeout(value, 1000)
       elem.addEventListener('mouseleave', () => { clearTimeout(timer) })
     })
   } else if (key == 'onpointerdown') {
@@ -29,45 +29,53 @@ function set(id, key, value) {
 }
 
 var styles = {
-  'Reverse match': 'background: darkmagenta; color: white; font-weight: bold; font-size: 20px',
-  'Loose match':   'background: sienna; color: white; font-weight: bold; font-size: 20px',
-  'Default match': 'background: darkred; color: white; font-weight: bold; font-size: 20px',
-  'Selected':      'background: white; color: black; font-weight: bold; font-size: 20px',
+  'Selected':       'background: white;       color: black; font-weight: bold; font-size: 20px',
+  'Hidden gem':     'background: deepskyblue; color: white; font-weight: bold; font-size: 20px',
+  'Similar tags':   'background: darkgreen;   color: white; font-weight: bold; font-size: 20px',
+  'Loose match':    'background: sienna;      color: white; font-weight: bold; font-size: 20px',
+  'Reverse match':  'background: darkmagenta; color: white; font-weight: bold; font-size: 20px',
+  'Default match':  'background: darkred;     color: white; font-weight: bold; font-size: 20px',
 }
 
 function setImageCard(loc, data) {
   var [gameId, recommender, baseGameId] = data
   set(loc + '-cell', 'hover', () => loadAboutGame(gameId))
+  set(loc + '-cell', 'style', styles[recommender])
   set(loc + '-title', 'innerText', recommender)
   set(loc + '-title', 'href', 'https://store.steampowered.com/app/' + gameId) // wait what?
   set(loc + '-image', 'src', 'https://cdn.akamai.steamstatic.com/steam/apps/' + gameId + '/header.jpg')
   
-  if (recommender == 'Hidden gem') {
-    set(loc + '-cell', 'style', 'background: deepskyblue; color: white; font-weight: bold; font-size: 20px')
-    var titleText = 'Hidden gem\n'
-    titleText += globalGameData.get(gameId).name + ' is a highly-rated but little-known game\n'
-    titleText += compare_candidates_verbose(baseGameId, gameId)
-    set(loc + '-image', 'title', titleText)
-
+  var gameName = globalGameData.get(gameId).name
+  var baseGameName = globalGameData.get(baseGameId).name
+  
+  var titleText = {
+    'Selected': ``,
+    'Hidden gem': `Hidden gem
+${gameName} is a highly-rated but little-known game with several tags in common with ${baseGameName}:
+${compare_candidates_verbose(baseGameId, gameId)}`,
+    'Similar tags': `Similar tags
+${gameName} has several tags in common with ${baseGameName}:
+${compare_candidates_verbose(baseGameId, gameId)}`,
+    'Loose match': `Loose match
+${gameName} is a loose "more like this" match for ${baseGameName}.
+It is commonly recommended by games which are recommended by ${baseGameName}.`,
+    'Reverse match': `Reverse match
+${baseGameName} is recommended by ${gameName}.`,
+    'Default match': `Default match
+${gameName} is recommended by ${baseGameName}.`,
+  }[recommender]
+  set(loc + '-image', 'title', titleText)
+  
+  if (recommender == 'Hidden gem' || recommender == 'Similar tags') {
     var perc = Math.round(100 * compare_candidates(baseGameId, gameId)) + '%'
-    set(loc + '-note', 'innerText', perc)
-  } else if (recommender == 'Similar tags') {
-    set(loc + '-cell', 'style', 'background: darkgreen; color: white; font-weight: bold; font-size: 20px')
-    var titleText = 'Similar tags\n'
-    titleText += globalGameData.get(gameId).name + ' has several tags in common with ' + globalGameData.get(baseGameId).name + '\n'
-    titleText += compare_candidates_verbose(baseGameId, gameId)
-    var perc = Math.round(100 * compare_candidates(baseGameId, gameId)) + '%'
-
-    set(loc + '-image', 'title', titleText)
     set(loc + '-note', 'innerText', perc)
   } else {
-    set(loc + '-cell', 'style', styles[recommender])
+    set(loc + '-note', 'innerText', null)
   }
-    
 }
 
 var pageNo = 0 // Global, used for 'back' and 'more' buttons
-function loadImages(gameId) {
+function loadImages(baseGameId) {
   var r_gems = document.getElementById('r_gems').className == 'toggle'
   var r_tags = document.getElementById('r_tags').className == 'toggle'
   var r_loose = document.getElementById('r_loose').className == 'toggle'
@@ -76,50 +84,76 @@ function loadImages(gameId) {
   var num_enabled = (r_gems ? 1 : 0) + (r_tags ? 1 : 0) + (r_loose ? 1 : 0) + (r_reverse ? 1 : 0)
   var per_category = [12, 8, 4, 3, 2][num_enabled]
 
-  var gems = gem_matches(gameId)
-  var tags = tag_matches(gameId)
-  var loose = loose_matches(gameId)
-  var reverse = reverse_matches(gameId)
-  var similar = default_matches(gameId)
+  var gems = gem_matches(baseGameId)
+  var tags = tag_matches(baseGameId)
+  var loose = loose_matches(baseGameId)
+  var reverse = reverse_matches(baseGameId)
+  var similar = default_matches(baseGameId)
 
+  var shownGames = new Set()
   for (var page = 0; page <= pageNo; page++) {
     var matches = []
     if (r_gems) {
       for (var i = 0; i < per_category; i++) {
         if (matches.length == 8) break
         if (gems.length == 0) break
-        matches.push([gems.shift(), 'Hidden gem', gameId])
+        var gameId = gems.shift()
+        if (shownGames.has(gameId)) i--
+        else {
+          matches.push([gameId, 'Hidden gem', baseGameId])
+          shownGames.add(gameId)
+        }
       }
     }
     if (r_tags) {
       for (var i = 0; i < per_category; i++) {
         if (matches.length == 8) break
         if (tags.length == 0) break
-        matches.push([tags.shift(), 'Similar tags', gameId])
+        var gameId = tags.shift()
+        if (shownGames.has(gameId)) i--
+        else {
+          matches.push([gameId, 'Similar tags', baseGameId])
+          shownGames.add(gameId)
+        }
       }
     }
     if (r_loose) {
       for (var i = 0; i < per_category; i++) {
         if (matches.length == 8) break
         if (loose.length == 0) break
-        matches.push([loose.shift(), 'Loose match', gameId])
+        var gameId = loose.shift()
+        if (shownGames.has(gameId)) i--
+        else {
+          matches.push([gameId, 'Loose match', baseGameId])
+          shownGames.add(gameId)
+        }
       }
     }
     if (r_reverse) {
       for (var i = 0; i < per_category; i++) {
         if (matches.length == 8) break
         if (reverse.length == 0) break
-        matches.push([reverse.shift(), 'Reverse match', gameId])
+        var gameId = reverse.shift()
+        if (shownGames.has(gameId)) i--
+        else {
+          matches.push([gameId, 'Reverse match', baseGameId])
+          shownGames.add(gameId)
+        }
       }
     }
-    for (var i = 0; ; i++) {
+    for (var i = 0; /**/; i++) {
       if (matches.length == 8) break
       if (similar.length == 0) break
-      matches.push([similar.shift(), 'Default match', gameId])
+      var gameId = similar.shift()
+      if (shownGames.has(gameId)) i--
+      else {
+        matches.push([gameId, 'Default match', baseGameId])
+        shownGames.add(gameId)
+      }
     }
   }
 
-  setImageCard('mm', [gameId, 'Selected', gameId])
+  setImageCard('mm', [baseGameId, 'Selected', baseGameId])
   setImageCard('tl', matches[0])
   setImageCard('tm', matches[1])
   setImageCard('tr', matches[2])
@@ -157,6 +191,8 @@ function setupButtons(gameId) {
 }
 
 function loadAboutGame(gameId) {
+  if (document.getElementById('open-app').href  == `steam://store/${gameId}`) return // Already selected
+
   set('game-title', 'innerText', globalGameData.get(gameId).name)
 
   set('open-web', 'href', `https://store.steampowered.com/app/${gameId}?utm_campaign=divingbell`)

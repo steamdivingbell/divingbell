@@ -136,3 +136,30 @@ function load_tag_data() {
     return globalTagData
   })
 }
+
+function loadGameDetails(gameId, callback) {
+  fetch(`bin/html5/bin/data/v2/app_details/${gameId}.txt`)
+  .then(r => r.json())
+  .then(r => r[gameId].data)
+  .then(r => {
+    var gameDetails = {
+      'description': r.short_description,
+      'genres': r.genres.map(g => g.description),
+      'price': 'Unknown',
+      'platforms': [],
+      'categories': r.categories.map(c => c.description),
+      'video': r.movies[0].webm.max,
+      'photos': [r.screenshots.map(s => s.path_full)],
+    }
+
+    if (r.is_free) gameDetails.price = 'Free'
+    else if (r.price_overview != null) gameDetails.price = r.price_overview.final_formatted
+
+    var platforms = []
+    if (r.platforms.windows) gameDetails.platforms.push('Windows')
+    if (r.platforms.mac)     gameDetails.platforms.push('Mac')
+    if (r.platforms.linux)   gameDetails.platforms.push('Linux')
+
+    callback(gameDetails)
+  })
+}

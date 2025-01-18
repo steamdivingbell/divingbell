@@ -1,3 +1,26 @@
+// My version of chrome is very old. These should be removed.
+Set.prototype.union = Set.prototype.union || function(other) {
+  var output = new Set(this)
+  for (var elem of other) output.add(elem)
+  return output
+}
+
+Set.prototype.intersection = Set.prototype.intersection || function(other) {
+  var output = new Set()
+  for (var elem of other) {
+    if (this.has(elem)) output.add(elem)
+  }
+  return output
+}
+
+Set.prototype.difference = Set.prototype.difference || function(other) {
+  var output = new Set()
+  for (var elem of this) {
+    if (!other.has(elem)) output.add(elem)
+  }
+  return output
+}
+
 // "Default", aka more like this: https://store.steampowered.com/recommended/morelike/app/210970
 // This might need some revamping in the new system, since there's now (9 + 6 + 3 + 9) games listed on the store page.
 function default_matches(gameId) {
@@ -6,28 +29,32 @@ function default_matches(gameId) {
 
 // "Reverse" is just "more like this" but inverse-lookup, which we have already indexed
 function reverse_matches(gameId) {
-  return Array.from(globalGameData.get(gameId).reverse)
+  var games = []
+  for (var game of globalGameData.get(gameId).reverse) {
+    var data = globalGameData.get(game)
+    if (data.perc < 0.80 || data.total < 500) continue // Don't recommend poorly-rated games
+    games.push(game)
+  }
+  return sort_games_by_tags(games, gameId)
 }
 
 // "Loose" is a 2x 'default' match, excluding the default matches themselves.
 function loose_matches(gameId) {
   var siblings = globalGameData.get(gameId).similar
-  var grandSiblings = new Set()
+  var games = new Set()
+  
+  // Add all second-generation siblings, if they're not immediate siblings and also not us.
   for (var sibling of siblings) {
     for (var grandSibling of globalGameData.get(sibling).similar) {
-      grandSiblings.add(grandSibling)
+      if (grandSibling == gameId) continue // Don't recommend ourselves
+      if (siblings.has(grandSibling)) continue // Don't recommend immediate siblings
+      var data = globalGameData.get(grandSibling)
+      if (data.perc < 0.80 || data.total < 500) continue // Don't recommend poorly-rated games
+      games.add(grandSibling)
     }
   }
   
-  // All second children who aren't immediate children or ourselves
-  var results = []
-  for (var grandSibling of grandSiblings) {
-    if (grandSibling == gameId) continue
-    if (siblings.has(grandSibling)) continue
-    results.push(grandSibling)
-  }
-
-  return sort_games_by_tags(results, gameId)
+  return sort_games_by_tags(Array.from(games), gameId)
 }
 
 // These were the original 'culledTags', although I might change them at some point.
@@ -84,21 +111,6 @@ function sort_games_by_tags(games, gameId) {
   return games
 }
 
-// My version of chrome is very old.
-Set.prototype.union = Set.prototype.union || function(other) {
-  var output = new Set(this)
-  for (var elem of other) output.add(elem)
-  return output
-}
-
-Set.prototype.intersection = Set.prototype.intersection || function(other) {
-  var output = new Set()
-  for (var elem of other) {
-    if (this.has(elem)) output.add(elem)
-  }
-  return output
-}
-
 function compare_candidates(gameA, gameB) {
   var tagsA = globalGameData.get(gameA).tags
   var tagsB = globalGameData.get(gameB).tags
@@ -144,11 +156,12 @@ function compare_candidates_verbose(gameA, gameB) {
 
   var description = ''
   for (var category of categories) {
+    if (tagData.get(category).weight == 0) continue
     tagData.get(category).tags.sort((a, b) => a.localeCompare(b))
     description += `+${tagData.get(category).weight} for ${category}: ${tagData.get(category).tags.join(', ')}\n`
   }
 
-  description += `${matchWeight} shared tags out of all ${totalWeight} tags: ${Math.round(100 * matchWeight / totalWeight)}% match\n`
+  description += `${matchWeight} points out a possible ${totalWeight}: ${Math.round(100 * matchWeight / totalWeight)}% match\n`
 
   return description
 }
