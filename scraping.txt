@@ -42,3 +42,5 @@ https://steamcommunity.com/sale/ajaxgetcategoriesbytag
 - 'Hidden gem' scores for each game
 ??? What is the alg here, idk.
 
+- 'Similar games' for each game
+Might need scraping here too. Not sure.
