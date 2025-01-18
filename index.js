@@ -7,10 +7,13 @@ window.onload = function() {
   // - Make it easier to pick a starting game
 
   Promise.all([load_game_data(), load_tag_data()])
-  .then(r => setActiveGame(210970))
+  .then(r => {
+    var params = new URLSearchParams(window.location.search)
+    setActiveGame(parseInt(params.get('appid')) || 210970)
+  })
   .then(r => {
     var games = Array.from(globalGameData.keys())
-    games.sort((a, b) => globalGameData.get(b).gemRating - globalGameData.get(a).gemRating)
+    games.sort((a, b) => globalGameData.get(b).total - globalGameData.get(a).total)
     debugger;
   })
 }

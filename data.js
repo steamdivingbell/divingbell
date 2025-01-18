@@ -111,16 +111,17 @@ function load_tag_data() {
       // Tags are associated with their heaviest category
       var categoryWeights = {'subgenre': 4, 'viewpoint': 3, 'theme': 2, 'players': 2, 'feature': 2, 'time': 2, 'story': 2, 'genre': 2}
       var bestCategory = null
-      var weight = 0
+      var bestWeight = 0
       for (var category of categories) {
-        if (categoryWeights[category] > weight) {
-          weight = categoryWeights[category]
+        var categoryWeight = categoryWeights[category] || 1
+        if (categoryWeight > bestWeight) {
+          bestWeight = categoryWeight
           bestCategory = category
         }
       }
 
       categoryData.set(tagId, {
-        'weight': weight,
+        'weight': bestWeight,
         'category': bestCategory,
         'isWeak': categories.includes('weak'),
       })
