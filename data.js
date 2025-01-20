@@ -127,12 +127,12 @@ function load_tag_data() {
       })
     }
 
-    for (var i = 0; i < globalTagData.length; i++) {
-      tagId = globalTagData[i].id
+    for (var tagData of globalTagData) {
+      tagId = tagData.id
       if (!categoryData.has(tagId)) continue
-      globalTagData[i].weight = categoryData.get(tagId).weight
-      globalTagData[i].category = categoryData.get(tagId).category
-      globalTagData[i].isWeak = categoryData.get(tagId).isWeak
+      tagData.weight = categoryData.get(tagId).weight
+      tagData.category = categoryData.get(tagId).category
+      tagData.isWeak = categoryData.get(tagId).isWeak
     }
 
     return globalTagData
@@ -157,7 +157,6 @@ function loadGameDetails(gameId) {
     if (r.is_free) gameDetails.price = 'Free'
     else if (r.price_overview != null) gameDetails.price = r.price_overview.final_formatted
 
-    var platforms = []
     if (r.platforms.windows) gameDetails.platforms.push('Windows')
     if (r.platforms.mac)     gameDetails.platforms.push('Mac')
     if (r.platforms.linux)   gameDetails.platforms.push('Linux')
