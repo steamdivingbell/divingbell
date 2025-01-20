@@ -101,6 +101,7 @@ if __name__ == '__main__':
   next_minute = datetime.now() + timedelta(minutes=1)
   game_ids = list(load_json('game_names.json').keys())
   for game_id in random.choices(game_ids, k=60):
+    print(f'Downloading data for game {game_id}')
     download_app_details(game_id)
     download_similar_games(game_id)
     download_review_details(game_id)
