@@ -24,7 +24,7 @@ def dump_json(data, file):
     json.dump(data, f, sort_keys=True, separators=(',', ':'))
 
 def get(url):
-  r = requests.get(url, headers=headers)
+  r = requests.get(url, timeout=20, headers=headers)
   r.raise_for_status()
   return r.json()
 
@@ -82,9 +82,9 @@ def download_review_details(game_id):
 ## HTML scraping ##
 
 def download_similar_games(game_id):
-  r = requests.get(f'https://store.steampowered.com/recommended/morelike/app/{game_id}', headers=headers)
+  r = requests.get(f'https://store.steampowered.com/recommended/morelike/app/{game_id}', timeout=20, headers=headers)
   basic_recommendations = between(r.text, '<h1 class="morelike_section_divider">Default</h1>', '<h2 class="morelike_section_divider">Upcoming Releases</h2>')
-  
+
   # There's more than 9 recommended games in the code, idk use them all
   similar_to_this_game = []
   for line in basic_recommendations.split('\n'):
