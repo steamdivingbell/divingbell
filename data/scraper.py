@@ -102,9 +102,13 @@ if __name__ == '__main__':
   game_ids = list(load_json('game_names.json').keys())
   for game_id in random.choices(game_ids, k=60):
     print(f'Downloading data for game {game_id}')
-    download_app_details(game_id)
-    download_similar_games(game_id)
-    download_review_details(game_id)
+    try:
+      download_app_details(game_id)
+      download_similar_games(game_id)
+      download_review_details(game_id)
+    except:
+      import traceback
+      traceback.print_exc()
     sleep_seconds = (next_minute - datetime.now()).total_seconds()
     print(f'Sleeping for {sleep_seconds} seconds')
     sleep(sleep_seconds)
