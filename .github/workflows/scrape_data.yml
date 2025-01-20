@@ -15,7 +15,7 @@ jobs:
       with:
         python-version: '3.x'
     - run: pip install -r data/requirements.txt
-    - run: python -u data/scraper.py
+    - run: python -u scraper.py
       working-directory: data
       timeout-minutes: 120
     - name: Commit game data
