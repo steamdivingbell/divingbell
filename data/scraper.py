@@ -20,7 +20,7 @@ def load_json(file):
     return json.load(f)
 
 def dump_json(data, file):
-  with open(file, 'w', encoding='utf-8') as f:
+  with open(file, 'w+', encoding='utf-8') as f:
     json.dump(data, f, sort_keys=True, separators=(',', ':'))
 
 def get(url):
@@ -43,7 +43,6 @@ def download_app_list():
     latest_games[str(game_data['appid'])] = game_data['name']
 
   game_names = load_json('game_names.json')
-  print('Removed games: ', sorted(set(game_names.keys()) - set(latest_games.keys())))
   print('Added games: ', sorted(set(latest_games.keys()) - set(game_names.keys())))
   game_names |= latest_games # Dict update operator from python 3.9
   dump_json(game_names, 'game_names.json')
@@ -61,8 +60,6 @@ def download_tags():
     latest_tags[tag_id]['categories'] = categories
 
   tags = load_json('tags.json')
-  print('Removed tags: ', sorted(set(tags.keys()) - set(latest_tags.keys())))
-  print('Added tags: ', sorted(set(latest_tags.keys()) - set(tags.keys())))
   tags |= latest_tags # Dict update operator from python 3.9
   dump_json(tags, 'tags.json')
 
