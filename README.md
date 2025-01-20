@@ -7,8 +7,8 @@ I have taken the original source code (and done some heavy reading of [the liter
 The current state of this project is:
 - [ ] Not working
 - [ ] Barely functional
-- [X] Functional
-- [ ] Feature parity
+- [ ] Functional
+- [X] Feature parity
 - [ ] Extended development
 - [ ] EOL
 

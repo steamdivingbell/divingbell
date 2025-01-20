@@ -1,0 +1,28 @@
+﻿name: Scrape game data
+on:
+  schedule:
+    - cron: '0 * * * *' # Runs hourly
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+    - run: pip install -r data/requirements.txt
+    - run: python -u data/scraper.py
+      working-directory: data
+      timeout-minutes: 120
+    - name: Commit game data
+      if: ${{ always() }}
+      run: |
+        git config --global user.email "steam-diving-bell@noreply.github.com"
+        git config --global user.name "SteamDivingBellBot"
+        git commit -am "Updated game data on $(date)"
+        git push
+      continue-on-error: true
