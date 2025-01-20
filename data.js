@@ -1,5 +1,5 @@
 /** TODO: Rather than using fetch(), all the data here should just be stored in their converted forms, as js files.
- * We might still use fetch() for files with indvidiual game details, if perf turns out to be an issue (but I doubt it).
+ * We might still use fetch() for files with individual game details, if perf turns out to be an issue (but I doubt it).
 **/
 
 var globalGameData = new Map()

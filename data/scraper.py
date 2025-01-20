@@ -103,7 +103,7 @@ if __name__ == '__main__':
   # Then, randomly refresh one game every minute
   next_minute = datetime.now() + timedelta(minutes=1)
   game_ids = list(load_json('game_names.json').keys())
-  for game_id in random.choices(game_ids, 60):
+  for game_id in random.choices(game_ids, k=60):
     download_app_details(game_id)
     download_similar_games(game_id)
     download_review_details(game_id)
