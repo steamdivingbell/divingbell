@@ -87,7 +87,7 @@ def download_similar_games(game_id):
   for line in basic_recommendations.split('\n'):
     if 'data-ds-appid' in line:
       similar_to_this_game.append(between(line, 'data-ds-appid="', '"'))
-  
+
   similar_games = load_json('similar_games.json')
   games_list[game_id]['similar'] = similar_to_this_game
   dump_json(similar_games, 'similar_games.json')
@@ -96,7 +96,7 @@ if __name__ == '__main__':
   # Download global data once per hour
   download_app_list()
   download_tags()
-  
+
   # Then, randomly refresh one game every minute
   next_minute = datetime.now() + timedelta(minutes=1)
   game_ids = list(load_json('game_names.json').keys())
