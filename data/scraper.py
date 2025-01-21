@@ -4,6 +4,7 @@ Some of it comes from documented web APIs, some from undocumented APIs, and a sm
 All of this is automated to allow the diving bell code to be automatically updated as new games come out, and game reviews/tags change.
 """
 from datetime import datetime, timedelta
+from pathlib import Path
 from time import sleep
 import json
 import random
@@ -99,19 +100,27 @@ def download_similar_games(game_id):
   dump_json(similar_games, 'similar_games.json')
 
 if __name__ == '__main__':
-  # Download global data once per hour
-  download_app_list()
-  download_tags()
+  # Refresh static data only once per hour, when this script runs
+  # download_app_list()
+  # download_tags()
 
-  # Then, randomly refresh one game every minute
-  next_minute = datetime.now() + timedelta(minutes=1)
+  all_games = load_json('game_names.json').keys()
+  deleted_games = load_json('deleted_games.json').keys()
+  fetched_games = [path.name for path in Path('app_details').iterdir()]
+  print(f'Fetched {len(fetched_games)} of {len(all_games)} ({len(deleted_games)} deleted)')
+
+  # Randomly refresh 4 games every minute for 55 minutes (allowing up to 5 minutes of downtime between runs)
+  interval = timedelta(seconds=15)
+
+  next_fetch = datetime.now() + interval
   game_ids = list(load_json('game_names.json').keys())
   for game_id in random.choices(game_ids, k=55):
     print(f'Downloading data for game {game_id}')
     if download_app_details(game_id):
       download_similar_games(game_id)
       download_review_details(game_id)
-    sleep_seconds = (next_minute - datetime.now()).total_seconds()
+
+    sleep_seconds = (next_fetch - datetime.now()).total_seconds()
     print(f'Sleeping for {sleep_seconds} seconds')
     sleep(sleep_seconds)
-    next_minute += timedelta(minutes=1)
+    next_fetch += interval
