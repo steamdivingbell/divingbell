@@ -101,26 +101,26 @@ def download_similar_games(game_id):
 
 if __name__ == '__main__':
   # Refresh static data only once per hour, when this script runs
-  # download_app_list()
-  # download_tags()
+  download_app_list()
+  download_tags()
 
-  all_games = load_json('game_names.json').keys()
-  deleted_games = load_json('deleted_games.json').keys()
-  fetched_games = [path.name for path in Path('app_details').iterdir()]
+  all_games = set(load_json('game_names.json').keys())
+  deleted_games = set(load_json('deleted_games.json').keys())
+  fetched_games = set([path.name for path in Path('app_details').iterdir()])
+  unfetched_games = all_games - fetched_games
   print(f'Fetched {len(fetched_games)} of {len(all_games)} ({len(deleted_games)} deleted)')
 
-  # Randomly refresh 4 games every minute for 55 minutes (allowing up to 5 minutes of downtime between runs)
-  interval = timedelta(seconds=15)
+  # Randomly refresh until 1 minute before the hour to allow for some processing time (git push, etc)
+  end_time = datetime.now().replace(minute=0, second=0) + timedelta(minutes=59)
+  while datetime.now() < end_time:
+    # For now, only sample from unfetched games.
+    game_id = random.choice(unfetched_games)
+    unfetched_games.remove(game_id)
 
-  next_fetch = datetime.now() + interval
-  game_ids = list(load_json('game_names.json').keys())
-  for game_id in random.choices(game_ids, k=55):
     print(f'Downloading data for game {game_id}')
     if download_app_details(game_id):
       download_similar_games(game_id)
       download_review_details(game_id)
 
-    sleep_seconds = (next_fetch - datetime.now()).total_seconds()
-    print(f'Sleeping for {sleep_seconds} seconds')
-    sleep(sleep_seconds)
-    next_fetch += interval
+    # The throttling limit for app details is 40 calls per minute, this is a reasonably generous sleep.
+    sleep(5)
