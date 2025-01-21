@@ -107,7 +107,7 @@ if __name__ == '__main__':
   all_games = set(load_json('game_names.json').keys())
   deleted_games = set(load_json('deleted_games.json').keys())
   fetched_games = set([path.name for path in Path('app_details').iterdir()])
-  unfetched_games = all_games - fetched_games
+  unfetched_games = all_games - fetched_games - deleted_games
   print(f'Fetched {len(fetched_games)} of {len(all_games)} ({len(deleted_games)} deleted)')
 
   # Randomly refresh until 1 minute before the hour to allow for some processing time (git push, etc)
