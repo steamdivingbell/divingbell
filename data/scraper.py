@@ -114,7 +114,7 @@ if __name__ == '__main__':
   end_time = datetime.now().replace(minute=0, second=0) + timedelta(minutes=59)
   while datetime.now() < end_time:
     # For now, only sample from unfetched games.
-    game_id = random.choice(unfetched_games)
+    game_id = random.choice(list(unfetched_games))
     unfetched_games.remove(game_id)
 
     print(f'Downloading data for game {game_id}')
