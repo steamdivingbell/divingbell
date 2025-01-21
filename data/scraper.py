@@ -66,14 +66,17 @@ def download_tags():
 
 def download_app_details(game_id):
   """https://github.com/Revadike/InternalSteamWebAPI/wiki/Get-App-Details"""
-  app_details = get(f'https://store.steampowered.com/api/appdetails?appids={game_id}')[game_id]
-  if not app_details['success']:
-    deleted_games = load_json('deleted_games.json')
-    deleted_games[game_id] = datetime.now().timestamp()
-    dump_json(deleted_games, 'deleted_games.json')
-    return False
-  dump_json(app_details['data'], f'app_details/{game_id}.json')
-  return True
+  try:
+    app_details = get(f'https://store.steampowered.com/api/appdetails?appids={game_id}')[game_id]
+    if app_details['success']:
+      dump_json(app_details['data'], f'app_details/{game_id}.json')
+      return True
+  except requests.exceptions.JSONDecodeError:
+    pass # Treat invalid JSON just like success=False
+  deleted_games = load_json('deleted_games.json')
+  deleted_games[game_id] = datetime.now().timestamp()
+  dump_json(deleted_games, 'deleted_games.json')
+  return False
 
 def download_review_details(game_id):
   """https://github.com/Revadike/InternalSteamWebAPI/wiki/Get-App-Reviews"""
