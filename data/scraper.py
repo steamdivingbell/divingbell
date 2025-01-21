@@ -65,8 +65,14 @@ def download_tags():
 
 def download_app_details(game_id):
   """https://github.com/Revadike/InternalSteamWebAPI/wiki/Get-App-Details"""
-  app_details = get(f'https://store.steampowered.com/api/appdetails?appids={game_id}')[game_id]['data']
-  dump_json(app_details, f'app_details/{game_id}.json')
+  app_details = get(f'https://store.steampowered.com/api/appdetails?appids={game_id}')[game_id]
+  if not app_details['success']:
+    deleted_games = load_json('deleted_games.json')
+    deleted_games[game_id] = datetime.now().timestamp()
+    dump_json(deleted_games, 'deleted_games.json')
+    return False
+  dump_json(app_details['data'], f'app_details/{game_id}.json')
+  return True
 
 def download_review_details(game_id):
   """https://github.com/Revadike/InternalSteamWebAPI/wiki/Get-App-Reviews"""
@@ -100,15 +106,11 @@ if __name__ == '__main__':
   # Then, randomly refresh one game every minute
   next_minute = datetime.now() + timedelta(minutes=1)
   game_ids = list(load_json('game_names.json').keys())
-  for game_id in random.choices(game_ids, k=60):
+  for game_id in random.choices(game_ids, k=55):
     print(f'Downloading data for game {game_id}')
-    try:
-      download_app_details(game_id)
+    if download_app_details(game_id):
       download_similar_games(game_id)
       download_review_details(game_id)
-    except:
-      import traceback
-      traceback.print_exc()
     sleep_seconds = (next_minute - datetime.now()).total_seconds()
     print(f'Sleeping for {sleep_seconds} seconds')
     sleep(sleep_seconds)
