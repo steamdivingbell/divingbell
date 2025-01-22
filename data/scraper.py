@@ -121,9 +121,12 @@ if __name__ == '__main__':
     unfetched_games.remove(game_id)
 
     print(f'Downloading data for game {game_id}')
-    if download_app_details(game_id):
-      download_similar_games(game_id)
-      download_review_details(game_id)
+    try:
+      if download_app_details(game_id):
+        download_similar_games(game_id)
+        download_review_details(game_id)
+    except requests.exceptions.HTTPError:
+      pass # HTTP errors are usually a server timeout -- we can come back to these games later.
 
     # The throttling limit for app details is 40 calls per minute, this is a reasonably generous sleep.
     sleep(5)
