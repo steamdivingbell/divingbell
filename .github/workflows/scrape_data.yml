@@ -1,7 +1,7 @@
 ﻿name: Scrape game data
 on:
   schedule:
-    - cron: '0 * * * *' # Runs hourly
+    - cron: '42 * * * *' # Runs 42 minutes past the hour, every hour
 permissions:
   contents: write
 
