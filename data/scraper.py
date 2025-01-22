@@ -113,8 +113,8 @@ if __name__ == '__main__':
   unfetched_games = all_games - fetched_games - deleted_games
   print(f'Fetched {len(fetched_games)} of {len(all_games)} ({len(deleted_games)} deleted)')
 
-  # Randomly refresh until 1 minute before the hour to allow for some processing time (git push, etc)
-  end_time = datetime.now().replace(minute=0, second=0) + timedelta(minutes=59)
+  # Randomly refresh until 2 minutes before the next job to allow for some processing time (git push, etc)
+  end_time = datetime.now().replace(minute=0, second=0) + timedelta(minutes=100)
   while datetime.now() < end_time:
     # For now, only sample from unfetched games.
     game_id = random.choice(list(unfetched_games))
