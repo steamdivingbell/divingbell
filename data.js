@@ -17,9 +17,6 @@ function load_game_data() {
         'tags': new Set(),
         'similar': new Set(),
         'reverse': new Set(),
-        'total': 0,
-        'perc': 0.5,
-        'gemRating': 0.5,
       })
     }
   })
@@ -55,17 +52,38 @@ function load_game_data() {
       }
     }
   })
-  .then(r => fetch('bin/html5/bin/data/v2/reviews/raw.tsv'))
+}
+
+var globalRatingData = new Map()
+function load_rating_data() {
+  return fetch('bin/html5/bin/data/v2/reviews/raw.tsv')
   .then(r => r.text())
   .then(r => {
     for (var line of r.split('\n')) {
       var [gameId, positive, total] = line.split('\t')
       gameId = parseInt(gameId)
+      if (!globalGameData.has(gameId)) continue
       positive = parseInt(positive)
       total = parseInt(total)
-      if (!globalGameData.has(gameId)) continue
-      globalGameData.get(gameId).total = total
-      globalGameData.get(gameId).perc = positive / (total + 1)
+
+      var perc = positive / (total + 1)
+      // Rating names according to https://reddit.com/r/Steam/comments/ivz45n/
+      var ratingNames = []
+      if (total < 50) {
+        ratingNames = [[0.80, 'Positive'],      [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Negative']]
+      } else if (total < 500) {
+        ratingNames = [[0.80, 'Very Positive'], [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Very Negative']]
+      } else {
+        ratingNames = [[0.95, 'Overwhelmingly Positive'], [0.80, 'Very Positive'], [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Overwhelmingly Negative']]
+      }
+      var ratingName = ratingNames.find(x => x[0] <= perc)[1]
+
+      globalRatingData.set(gameId, {
+        'total': total,
+        'perc': perc,
+        'ratingName': ratingName,
+        'isLowRated': data.perc < 0.80 || data.total < 500
+      })
     }
   })
   .then(r => fetch('bin/html5/bin/data/v2/reviews/gem.tsv'))
@@ -74,11 +92,11 @@ function load_game_data() {
     for (var line of r.split('\n')) {
       var [gameId, gemRating] = line.split('\t')
       gameId = parseInt(gameId)
-      if (!globalGameData.has(gameId)) continue
+      if (!globalRatingData.has(gameId)) continue
 
       // TODO: I have no idea how this number is calculated -- but it should be possible to reverse-engineer the formula.
       // It's possible that it's using https://steamdb.info/blog/steamdb-rating/#javascript-implementation (or something similar)?
-      globalGameData.get(gameId).gemRating = parseFloat(gemRating)
+      globalRatingData.get(gameId).gemRating = parseFloat(gemRating)
     }
   })
 }
@@ -162,21 +180,6 @@ function loadGameDetails(gameId) {
     if (r.platforms.linux)   gameDetails.platforms.push('Linux')
 
     if (r.movies != null && r.movies.length > 0) gameDetails['video'] = r.movies[0].webm.max
-
-    var perc = globalGameData.get(gameId).perc
-    var total = globalGameData.get(gameId).total
-
-    // Rating names according to https://reddit.com/r/Steam/comments/ivz45n/
-    var ratingNames = []
-    if (total < 50) {
-      ratingNames = [[0.80, 'Positive'],      [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Negative']]
-    } else if (total < 500) {
-      ratingNames = [[0.80, 'Very Positive'], [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Very Negative']]
-    } else {
-      ratingNames = [[0.95, 'Overwhelmingly Positive'], [0.80, 'Very Positive'], [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Overwhelmingly Negative']]
-    }
-    var ratingName = ratingNames.find(x => x[0] <= perc)[1]
-    gameDetails['ratingText'] = `${ratingName} (${Math.trunc(100 * perc)}% — ${total} ratings)`
 
     return gameDetails
   })

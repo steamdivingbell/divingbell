@@ -6,15 +6,17 @@ window.onload = function() {
   // - Require games to exclude tag 'Y'
   // - Make it easier to pick a starting game
 
-  Promise.all([load_game_data(), load_tag_data()])
+  Promise.all([load_game_data(), load_rating_data(), load_tag_data()])
   .then(r => {
     var params = new URLSearchParams(window.location.search)
     setActiveGame(parseInt(params.get('appid')) || 210970)
   })
   .then(r => {
-    var games = Array.from(globalGameData.keys())
-    games.sort((a, b) => globalGameData.get(b).total - globalGameData.get(a).total)
-    debugger;
+    for (var [gameId, data] of globalRatingData.items()) {
+      if (data.total == 10) {
+        console.log(gameId, data.perc, data.gemScore)
+      }
+    }
   })
 }
 
@@ -250,7 +252,10 @@ function loadAboutGame(gameId) {
     set('platforms', 'innerText', r.platforms.join(', '))
     set('categories', 'innerText', r.categories.join(', '))
     set('tags', 'innerText', r.tags.join(', '))
-    set('rating', 'innerText', r.ratingText)
+
+    var data = globalRatingData.get(gameId)
+    var ratingText = `${data.ratingName} (${Math.trunc(100 * data.perc)}% — ${data.total} ratings)`
+    set('rating', 'innerText', ratingText)
 
     if (r.video != null) {
       set('video', 'display', null)

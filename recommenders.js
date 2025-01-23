@@ -30,8 +30,7 @@ function default_matches(gameId) {
 function reverse_matches(gameId) {
   var games = []
   for (var game of globalGameData.get(gameId).reverse) {
-    var data = globalGameData.get(game)
-    if (data.perc < 0.80 || data.total < 500) continue // Don't recommend poorly-rated games
+    if (globalRatingData.get(gameId).isLowRated) continue // Don't recommend poorly-rated games
     games.push(game)
   }
   return sort_games_by_tags(games, gameId)
@@ -47,8 +46,7 @@ function loose_matches(gameId) {
     for (var grandSibling of globalGameData.get(sibling).similar) {
       if (grandSibling == gameId) continue // Don't recommend ourselves
       if (siblings.has(grandSibling)) continue // Don't recommend immediate siblings
-      var data = globalGameData.get(grandSibling)
-      if (data.perc < 0.80 || data.total < 500) continue // Don't recommend poorly-rated games
+      if (globalRatingData.get(grandSibling).isLowRated) continue // Don't recommend poorly-rated games
       games.add(grandSibling)
     }
   }
@@ -76,7 +74,7 @@ function tag_matches(gameId) {
   var games = []
   for (var [game, data] of globalGameData.entries()) {
     if (game == gameId) continue // Don't recommend the current game
-    if (data.perc < 0.80 || data.total < 500) continue // Don't recommend poorly-rated games
+    if (globalRatingData.get(gameId).isLowRated) continue // Don't recommend poorly-rated games
 
     // Ensure that this game matches at least one tag in each category
     var missingCategories = new Set(requiredCategories)
@@ -95,7 +93,7 @@ function tag_matches(gameId) {
 // "Hidden gems" is the tags matcher but only for games above some % rating and below some # total ratings. Not sure what those numbers are, yet.
 function gem_matches(gameId) {
   var games = []
-  for (var [game, data] of globalGameData.entries()) {
+  for (var [game, data] of globalRatingData.entries()) {
     if (game == gameId) continue // Don't recommend the current game
     // TODO: Should probably filter based on gem score, not raw %. I do need to know what the hell that is though.
     if (data.perc > 0.80 && data.total < 500) games.push(game)
@@ -107,7 +105,7 @@ function gem_matches(gameId) {
 // Used in many places for tie breaks, also used directly for the tag recommender
 function sort_games_by_tags(games, gameId) {
   // Inverse sort so that the largest numbers (highest matches) are topmost. Ties broken by % positive rating.
-  games.sort((a, b) => Math.sign(compare_candidates(gameId, b) - compare_candidates(gameId, a)) || Math.sign(globalGameData.get(b).perc - globalGameData.get(a).perc))
+  games.sort((a, b) => Math.sign(compare_candidates(gameId, b) - compare_candidates(gameId, a)) || Math.sign(globalRatingData.get(b).perc - globalRatingData.get(a).perc))
   return games
 }
 
