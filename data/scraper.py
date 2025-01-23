@@ -68,11 +68,14 @@ def download_app_details(game_id):
   """https://github.com/Revadike/InternalSteamWebAPI/wiki/Get-App-Details"""
   try:
     app_details = get(f'https://store.steampowered.com/api/appdetails?appids={game_id}')[game_id]
-    if app_details['success']:
+    # Some games redirect to other games -- if the game we get back is not the one we ask for, we should not list it in our system.
+    if app_details['success'] and app_details['data']['steam_appid'] == game_id:
       dump_json(app_details['data'], f'app_details/{game_id}.json')
       return True
   except requests.exceptions.JSONDecodeError:
-    pass # Treat invalid JSON just like success=False
+    pass # Treat invalid JSON as an invalid game
+
+  # If the game was invalid, make a note of it in deleted_games so that we don't try to fetch it again.
   deleted_games = load_json('deleted_games.json')
   deleted_games[game_id] = datetime.now().timestamp()
   dump_json(deleted_games, 'deleted_games.json')
