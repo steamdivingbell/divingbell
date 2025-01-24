@@ -69,7 +69,7 @@ def download_app_details(game_id):
   try:
     app_details = get(f'https://store.steampowered.com/api/appdetails?appids={game_id}')[game_id]
     # Some games redirect to other games -- if the game we get back is not the one we ask for, we should not list it in our system.
-    if app_details['success'] and app_details['data']['steam_appid'] == game_id:
+    if app_details['success'] and str(app_details['data']['steam_appid']) == game_id:
       dump_json(app_details['data'], f'app_details/{game_id}.json')
       return True
   except requests.exceptions.JSONDecodeError:
@@ -108,12 +108,12 @@ def download_similar_games(game_id):
 
 if __name__ == '__main__':
   # Refresh static data only once per hour, when this script runs
-  download_app_list()
+  git download_app_list()
   download_tags()
 
   all_games = set(load_json('game_names.json').keys())
   deleted_games = set(load_json('deleted_games.json').keys())
-  fetched_games = set([path.name for path in Path('app_details').iterdir()])
+  fetched_games = set((path.stem for path in Path('app_details').glob('*.json')))
   unfetched_games = all_games - fetched_games - deleted_games
   print(f'Fetched {len(fetched_games)} of {len(all_games)} ({len(deleted_games)} deleted)')
 
