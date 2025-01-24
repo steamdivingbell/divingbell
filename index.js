@@ -12,11 +12,13 @@ window.onload = function() {
     setActiveGame(parseInt(params.get('appid')) || 210970)
   })
   .then(r => {
-    for (var [gameId, data] of globalRatingData.items()) {
-      if (data.total == 10) {
-        console.log(gameId, data.perc, data.gemScore)
+    var acc = {}
+    for (var [gameId, data] of globalRatingData.entries()) {
+      if (data.positive == 10 && data.gemRating != undefined) {
+        acc[data.total] = data.gemRating
       }
     }
+    console.log(acc)
   })
 }
 

@@ -18,6 +18,15 @@ function load_game_data() {
         'similar': new Set(),
         'reverse': new Set(),
       })
+
+      // TODO: This should go away when I have better data.
+      globalRatingData.set(gameId, {
+        'total': 0,
+        'perc': 0.5,
+        'gemRating': 0.5,
+        'ratingName': 'Negative',
+        'isLowRated': true,
+      })
     }
   })
   .then(r => Promise.all(fileNames.map(f => fetch(f))))
@@ -80,9 +89,10 @@ function load_rating_data() {
 
       globalRatingData.set(gameId, {
         'total': total,
+        'positive': positive,
         'perc': perc,
         'ratingName': ratingName,
-        'isLowRated': data.perc < 0.80 || data.total < 500
+        'isLowRated': perc < 0.80 || total < 500
       })
     }
   })
@@ -96,7 +106,7 @@ function load_rating_data() {
 
       // TODO: I have no idea how this number is calculated -- but it should be possible to reverse-engineer the formula.
       // It's possible that it's using https://steamdb.info/blog/steamdb-rating/#javascript-implementation (or something similar)?
-      globalRatingData.get(gameId).gemRating = parseFloat(gemRating)
+      globalRatingData.get(gameId)['gemRating'] = parseFloat(gemRating)
     }
   })
 }
