@@ -108,7 +108,7 @@ def download_similar_games(game_id):
 
 if __name__ == '__main__':
   # Refresh static data only once per hour, when this script runs
-  git download_app_list()
+  download_app_list()
   download_tags()
 
   all_games = set(load_json('game_names.json').keys())
