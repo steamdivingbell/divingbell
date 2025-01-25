@@ -93,6 +93,7 @@ def download_review_details(game_id):
 
 def download_similar_games(game_id):
   r = requests.get(f'https://store.steampowered.com/recommended/morelike/app/{game_id}', timeout=20, headers=headers)
+  r.raise_for_status()
   # If I want a real bs4 parse, see here: https://github.com/billy-yoyo/SteamBot-Plugins/blob/master/aiosteamsearch.py#L1061
   basic_recommendations = between(r.text, '<h1 class="morelike_section_divider">Default</h1>', '<h2 class="morelike_section_divider">Upcoming Releases</h2>')
 
