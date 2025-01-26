@@ -161,7 +161,6 @@ if __name__ == '__main__':
     # For now, only sample from unfetched games.
     game_id = random.choice(list(unfetched_games))
     unfetched_games.remove(game_id)
-    game_id = '2725460'
 
     print(f'Downloading data for game {game_id}')
     try:
