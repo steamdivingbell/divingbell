@@ -17,11 +17,30 @@ headers = {
 ## Helper methods ##
 
 def load_json(file):
-  with open(file, 'r', encoding='utf-8') as f:
-    return json.load(f)
+  file = Path(file)
+  with file.open('r', encoding='utf-8') as f:
+    contents = f.read()
+    prefix = f'window.{file.stem} = '
+    if contents.startswith(prefix):
+      contents = contents[len(prefix):]
+    return json.loads(contents)
+
+def dump_js(data, file):
+  file = Path(file)
+  with file.open('w+', encoding='utf-8') as f:
+    # Custom serialization which puts each top-level on its own line
+    keys = [int(key) for key in data.keys()] # TODO: Assumed dict with integer keys? Is this OK?
+    keys.sort()
+    f.write(f'window.{file.stem} = {{\n')
+    for key in keys:
+      f.write(f'\t"{key}":')
+      json.dump(data[str(key)], f, sort_keys=True, separators=(',', ':'))
+      f.write(',\n' if key != keys[-1] else '\n') # No trailing commas allowed in JSON
+    f.write('}')
 
 def dump_json(data, file):
-  with open(file, 'w+', encoding='utf-8') as f:
+  file = Path(file)
+  with file.open('w+', encoding='utf-8') as f:
     json.dump(data, f, sort_keys=True, separators=(',', ':'))
 
 def get(url):
@@ -43,10 +62,10 @@ def download_app_list():
   for game_data in app_list:
     latest_games[str(game_data['appid'])] = game_data['name']
 
-  game_names = load_json('game_names.json')
+  game_names = load_json('game_names.js')
   print('Added games: ', sorted(set(latest_games.keys()) - set(game_names.keys())))
   game_names |= latest_games # Dict update operator from python 3.9
-  dump_json(game_names, 'game_names.json')
+  dump_js(game_names, 'game_names.js')
 
 ## Unofficial APIs ##
 
@@ -60,9 +79,9 @@ def download_tags():
   for tag_id, categories in tag_data['rgCategoriesByTag'].items():
     latest_tags[tag_id]['categories'] = categories
 
-  tags = load_json('tags.json')
+  tags = load_json('tags.js')
   tags |= latest_tags # Dict update operator from python 3.9
-  dump_json(tags, 'tags.json')
+  dump_js(tags, 'tags.js')
 
 def download_app_details(game_id):
   """https://github.com/Revadike/InternalSteamWebAPI/wiki/Get-App-Details"""
@@ -76,18 +95,18 @@ def download_app_details(game_id):
     pass # Treat invalid JSON as an invalid game
 
   # If the game was invalid, make a note of it in deleted_games so that we don't try to fetch it again.
-  deleted_games = load_json('deleted_games.json')
+  deleted_games = load_json('deleted_games.js')
   deleted_games[game_id] = datetime.now().timestamp()
-  dump_json(deleted_games, 'deleted_games.json')
+  dump_js(deleted_games, 'deleted_games.js')
   return False
 
 def download_review_details(game_id):
   """https://github.com/Revadike/InternalSteamWebAPI/wiki/Get-App-Reviews"""
   app_reviews = get(f'https://store.steampowered.com/appreviews/{game_id}?json=1&filter=summary&language=all&purchase_type=all')
 
-  reviews = load_json('reviews.json')
+  reviews = load_json('reviews.js')
   reviews[game_id] = app_reviews['query_summary']
-  dump_json(reviews, 'reviews.json')
+  dump_js(reviews, 'reviews.js')
 
 ## HTML scraping ##
 
@@ -103,17 +122,17 @@ def download_similar_games(game_id):
     if 'data-ds-appid' in line:
       similar_to_this_game.append(between(line, 'data-ds-appid="', '"'))
 
-  similar_games = load_json('similar_games.json')
+  similar_games = load_json('similar_games.js')
   similar_games[game_id] = similar_to_this_game
-  dump_json(similar_games, 'similar_games.json')
+  dump_js(similar_games, 'similar_games.js')
 
 if __name__ == '__main__':
   # Refresh static data only once per hour, when this script runs
   download_app_list()
   download_tags()
 
-  all_games = set(load_json('game_names.json').keys())
-  deleted_games = set(load_json('deleted_games.json').keys())
+  all_games = set(load_json('game_names.js').keys())
+  deleted_games = set(load_json('deleted_games.js').keys())
   fetched_games = set((path.stem for path in Path('app_details').glob('*.json')))
   unfetched_games = all_games - fetched_games - deleted_games
   print(f'Fetched {len(fetched_games)} of {len(all_games)} ({len(deleted_games)} deleted)')
