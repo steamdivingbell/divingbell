@@ -171,6 +171,5 @@ if __name__ == '__main__':
         download_review_details(game_id)
     except requests.exceptions.HTTPError:
       pass # HTTP errors are usually a server timeout -- we can come back to these games later.
-    raise
     # The throttling limit for app details is 40 calls per minute, this is a reasonably generous sleep.
     sleep(5)
