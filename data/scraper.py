@@ -63,7 +63,7 @@ def download_app_list():
   latest_games = {}
   app_list = get('https://api.steampowered.com/ISteamApps/GetAppList/v2')['applist']['apps']
   for game_data in app_list:
-    latest_games[str(game_data['appid'])] = game_data['name']
+    latest_games[str(game_data['appid'])] = game_data['name'].strip()
 
   game_names = load_json('game_names.js')
   print('Added games: ', sorted(set(latest_games.keys()) - set(game_names.keys())))
@@ -79,6 +79,7 @@ def download_tags():
 
   latest_tags = {}
   for tag_id, name in tag_data['rgTagNames'].items():
+    name = name.strip()
     latest_tags[tag_id] = {'name': name}
     global tag_name_to_id
     tag_name_to_id[name] = tag_id # Used by download_app_tags
@@ -160,6 +161,7 @@ if __name__ == '__main__':
     # For now, only sample from unfetched games.
     game_id = random.choice(list(unfetched_games))
     unfetched_games.remove(game_id)
+    game_id = '2725460'
 
     print(f'Downloading data for game {game_id}')
     try:
@@ -169,6 +171,6 @@ if __name__ == '__main__':
         download_review_details(game_id)
     except requests.exceptions.HTTPError:
       pass # HTTP errors are usually a server timeout -- we can come back to these games later.
-
+    raise
     # The throttling limit for app details is 40 calls per minute, this is a reasonably generous sleep.
     sleep(5)
