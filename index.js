@@ -10,7 +10,7 @@ window.onload = function() {
   Promise.all([load_game_data(), load_rating_data(), load_tag_data()])
   .then(r => {
     var params = new URLSearchParams(window.location.search)
-    setActiveGame(parseInt(params.get('appid')) || 210970)
+    setActiveGame(params.get('appid') || '210970')
   })
 }
 

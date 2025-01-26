@@ -1,4 +1,4 @@
-// My version of chrome is very old. These should be removed.
+// My version of chrome is very old. These should be removed, probably. At some point.
 Set.prototype.union = Set.prototype.union || function(other) {
   var output = new Set(this)
   for (var elem of other) output.add(elem)
@@ -21,7 +21,7 @@ Set.prototype.difference = Set.prototype.difference || function(other) {
   return output
 }
 
-// "Default", aka more like this: https://store.steampowered.com/recommended/morelike/app/210970
+// "Default" matches, directly from steam's "more like this" recommendations
 function default_matches(gameId) {
   return Array.from(globalGameData.get(gameId).similar)
 }
