@@ -1,45 +1,20 @@
 var globalGameData = new Map()
-function load_game_data() {
+var globalRatingData = new Map()
+var globalTagData = new Map()
+
+window.loadDataFiles = function() {
   for (var gameId in window.game_names) {
+    
+    tag_ids = window.tags
     globalGameData.set(gameId, {
       'name': window.game_names[gameId],
-      'tags': new Set(),
+      'tags': window.game_tags[gameId],
       'similar': new Set(),
       'reverse': new Set(),
     })
   }
-  
-  for (var gameId in window.similar_games) {
-    for (var similarGame of window.game_names[gameId]) {
-      if (!globalGameData.has(similarGame)) continue // TODO: Data sanity? I don't think this should be possible.
 
-      globalGameData.get(gameId).similar.add(similarGame)
-      globalGameData.get(similarGame).reverse.add(gameId)
-    }
-  }
-
-  // TODO: Tags...? Uh oh.
-  /*
-  .then(r => fetch('data/tags.json'))
-  .then(r => r.text())
-  .then(r => {
-    for (var line of r.split('\n')) {
-      var [gameId, tags] = line.split('\t')
-      if (tags == '') continue
-      if (!globalGameData.has(gameId)) continue
-      for (var tag of tags.split(',')) {
-        globalGameData.get(gameId).tags.add(parseInt(tag))
-      }
-    }
-  })
-  */
-}
-
-var globalRatingData = new Map()
-function load_rating_data() {
   for (var gameId in window.reviews) {
-    if (!globalGameData.has(gameId)) continue // TODO: Data sanity? I don't think this should be possible.
-
     var data = window.reviews[gameId]
 
     // Secondary rating which is more fair for sparsely-rated games
@@ -49,19 +24,22 @@ function load_rating_data() {
     var gemRating = perc - (perc - 0.5) * Math.pow(2, -Math.log10(total + 1));
 
     globalRatingData.set(gameId, {
-      'total': data.total_reviews,
-      'positive': data.total_positive, // TODO: Unused
-      'perc': perc,
-      'gemRating': gemRating,
-      'ratingName': data.review_score_desc,
+      'ratingText': `${data.review_score_desc} (${Math.trunc(100 * perc)}% — ${total} ratings)`,
+      'sortKey': gemRating,
       'isLowRated': perc < 0.80 || total < 500,
+      'isHiddenGem': gemRating >= 0.80 && total < 500,
     })
   }
-}
 
-var categoryWeights = {'subgenre': 4, 'viewpoint': 3, 'theme': 2, 'players': 2, 'feature': 2, 'time': 2, 'story': 2, 'genre': 2}
-var globalTagData = new Map()
-function load_tag_data() {
+  for (var gameId in window.similar_games) {
+    for (var similarGame of window.similar_games[gameId]) {
+      if (!globalRatingData.has(similarGame)) continue // TODO: Hopefully this is not possible once we have full data.
+
+      globalGameData.get(gameId).similar.add(similarGame)
+      globalGameData.get(similarGame).reverse.add(gameId)
+    }
+  }
+
   for (var tag in window.tags) {
     var categories = window.tags[tag].categories || []
 
@@ -69,6 +47,8 @@ function load_tag_data() {
     var bestCategory = null
     var bestWeight = 0
     for (var category of categories) {
+      // TODO: There might be more things we should weight now.
+      var categoryWeights = {'subgenre': 4, 'viewpoint': 3, 'theme': 2, 'players': 2, 'feature': 2, 'time': 2, 'story': 2, 'genre': 2}
       var categoryWeight = categoryWeights[category] || 1
       if (categoryWeight > bestWeight) {
         bestWeight = categoryWeight
@@ -82,6 +62,13 @@ function load_tag_data() {
       'category': bestCategory,
       'isWeak': categories.includes('weak'),
     })
+  }
+
+  // Some games are deleted, or part of a bundle, or just not listed on Steam for whatever reason.
+  // If we weren't able to load the game's reviews while scraping, it's not publicly listed on steam,
+  // and we shouldn't recommend it to users.
+  for (var game of Array.from(globalGameData.keys())) {
+    if (!globalRatingData.has(game)) globalGameData.delete(game)
   }
 }
 

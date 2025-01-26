@@ -7,11 +7,19 @@ window.onload = function() {
   // - Make it easier to pick a starting game
   // All of the above require a 'search' feature. Le sigh.
 
-  Promise.all([load_game_data(), load_rating_data(), load_tag_data()])
-  .then(r => {
-    var params = new URLSearchParams(window.location.search)
-    setActiveGame(params.get('appid') || '210970')
-  })
+  window.loadDataFiles()
+  var params = new URLSearchParams(window.location.search)
+  if (params.has('appid')) {
+    setActiveGame(params.get('appid'))
+  } else {
+    // Order games by adjusted rating
+    var games = Array.from(window.globalGameData.keys())
+    games.sort((a, b) => Math.sign(globalRatingData.get(b).sortKey - globalRatingData.get(a).sortKey))
+    
+    // Then pick one of the top 100 (randomly) -- these should be games that people should be familiar with (I hope).
+    var index = Math.floor(Math.random() * 100)
+    setActiveGame(games[index])
+  }
 }
 
 function set(id, key, value) {
@@ -59,6 +67,8 @@ function setImageCard(loc, data) {
   set(loc + '-title', 'innerText', recommender)
   set(loc + '-title', 'href', 'https://store.steampowered.com/app/' + gameId)
   set(loc + '-image', 'src', 'https://cdn.akamai.steamstatic.com/steam/apps/' + gameId + '/header.jpg')
+  
+  if (gameId == null) return // Ran out of recommendations
 
   var gameName = globalGameData.get(gameId).name
   var baseGameName = globalGameData.get(baseGameId).name
@@ -157,6 +167,7 @@ function loadImages(baseGameId) {
         }
       }
     }
+    // Fallback to Steam's recommendations if we run out of our recommenders
     for (var i = 0; /**/; i++) {
       if (matches.length == 8) break
       if (similar.length == 0) break
@@ -167,6 +178,8 @@ function loadImages(baseGameId) {
         shownGames.add(gameId)
       }
     }
+    // Placeholder if we run out of everything so we don't crash
+    while (matches.length < 8) matches.push([null, null, baseGameId])
   }
 
   setImageCard('mm', [baseGameId, 'Selected', baseGameId])
@@ -178,7 +191,7 @@ function loadImages(baseGameId) {
   setImageCard('bm', matches[5])
   setImageCard('bl', matches[6])
   setImageCard('ml', matches[7])
-  
+
   // Setup alt text for the various dynamic buttons
   set('r_gems', 'title', (r_gems ? 'Disable' : 'Enable') + ' the "Gems" recommender')
   set('r_tags', 'title', (r_tags ? 'Disable' : 'Enable') + ' the "Tags" recommender')
@@ -229,13 +242,14 @@ function setupButtons(gameId) {
     loadImages(gameId)
   })
 }
-  
+
 function loadAboutGame(gameId) {
-  if (document.getElementById('open-app').href  == `steam://store/${gameId}`) return // Already selected
+  // If this game is already loaded, don't reload it (it causes a flicker and restarts the video)
+  if (document.getElementById('open-app').href == `steam://store/${gameId}`) return
 
   set('game-title', 'innerText', globalGameData.get(gameId).name)
 
-  set('open-web', 'href', `https://store.steampowered.com/app/${gameId}?utm_campaign=divingbell`)
+  set('open-web', 'href', `https://store.steampowered.com/app/${gameId}?utm_campaign=steamdivingbell`)
   set('open-app', 'href', `steam://store/${gameId}`)
 
   loadGameDetails(gameId)
@@ -246,10 +260,7 @@ function loadAboutGame(gameId) {
     set('platforms', 'innerText', r.platforms.join(', '))
     set('categories', 'innerText', r.categories.join(', '))
     set('tags', 'innerText', r.tags.join(', '))
-
-    var data = globalRatingData.get(gameId)
-    var ratingText = `${data.ratingName} (${Math.trunc(100 * data.perc)}% — ${data.total} ratings)`
-    set('rating', 'innerText', ratingText)
+    set('rating', 'innerText', globalRatingData.get(gameId).ratingText)
 
     if (r.video != null) {
       set('video', 'display', null)

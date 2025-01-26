@@ -95,7 +95,7 @@ function gem_matches(gameId) {
   var games = []
   for (var [game, data] of globalRatingData.entries()) {
     if (game == gameId) continue // Don't recommend the current game
-    if (data.gemRating > 0.80 && data.total < 500) games.push(game)
+    if (data.isHiddenGem) games.push(game)
   }
 
   return sort_games_by_tags(games, gameId)
@@ -103,8 +103,10 @@ function gem_matches(gameId) {
 
 // Used in many places for tie breaks, also used directly for the tag recommender
 function sort_games_by_tags(games, gameId) {
-  // Inverse sort so that the largest numbers (highest matches) are topmost. Ties broken by % positive rating.
-  games.sort((a, b) => Math.sign(compare_candidates(gameId, b) - compare_candidates(gameId, a)) || Math.sign(globalRatingData.get(b).perc - globalRatingData.get(a).perc))
+  // Inverse sort so that the largest numbers (highest matches) are topmost. Ties broken by adjusted positive rating.
+  games.sort((a, b) =>
+    Math.sign(compare_candidates(gameId, b) - compare_candidates(gameId, a))
+    || Math.sign(globalRatingData.get(b).sortKey - globalRatingData.get(a).sortKey))
   return games
 }
 

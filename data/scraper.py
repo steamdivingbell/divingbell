@@ -8,7 +8,10 @@ from pathlib import Path
 from time import sleep
 import json
 import random
+
+import bs4
 import requests
+
 
 headers = {
   'User-Agent': 'SteamDivingBell/3.0 (https://github.com/jbzdarkid/divingbell; https://github.com/jbzdarkid/divingbell/issues)',
@@ -48,10 +51,10 @@ def get(url):
   r.raise_for_status()
   return r.json()
 
-def between(string, before, after):
-  start = string.index(before) + len(before)
-  end = string.index(after, start)
-  return string[start:end]
+def get_soup(url):
+  r = requests.get(url, timeout=20, headers=headers)
+  r.raise_for_status()
+  return bs4.BeautifulSoup(r.text, 'html.parser')
 
 ## Official APIs ##
 
@@ -69,13 +72,16 @@ def download_app_list():
 
 ## Unofficial APIs ##
 
+tag_name_to_id = {}
 def download_tags():
   """https://github.com/Revadike/InternalSteamWebAPI/wiki/Get-Categories-By-Tag"""
   tag_data = get('https://steamcommunity.com/sale/ajaxgetcategoriesbytag')
 
   latest_tags = {}
   for tag_id, name in tag_data['rgTagNames'].items():
-    latest_tags[tag_id] = {'id': tag_id, 'name': name}
+    latest_tags[tag_id] = {'name': name}
+    global tag_name_to_id
+    tag_name_to_id[name] = tag_id # Used by download_app_tags
   for tag_id, categories in tag_data['rgCategoriesByTag'].items():
     latest_tags[tag_id]['categories'] = categories
 
@@ -111,20 +117,31 @@ def download_review_details(game_id):
 ## HTML scraping ##
 
 def download_similar_games(game_id):
-  r = requests.get(f'https://store.steampowered.com/recommended/morelike/app/{game_id}', timeout=20, headers=headers)
-  r.raise_for_status()
-  # If I want a real bs4 parse, see here: https://github.com/billy-yoyo/SteamBot-Plugins/blob/master/aiosteamsearch.py#L1061
-  basic_recommendations = between(r.text, '<h1 class="morelike_section_divider">Default</h1>', '<h2 class="morelike_section_divider">Upcoming Releases</h2>')
+  soup = get_soup(f'https://store.steampowered.com/recommended/morelike/app/{game_id}')
 
-  # There's more than 9 recommended games in the code, idk use them all
+  # The graphics only show 9 recommendations, but the raw code has more; we take them all.
   similar_to_this_game = []
-  for line in basic_recommendations.split('\n'):
-    if 'data-ds-appid' in line:
-      similar_to_this_game.append(between(line, 'data-ds-appid="', '"'))
+  for item in soup.find_all('div', {'class': 'similar_grid_item'}):
+    similar_to_this_game.append(item.find('a', {'class': 'similar_grid_capsule'}).get('data-ds-appid'))
 
   similar_games = load_json('similar_games.js')
   similar_games[game_id] = similar_to_this_game
   dump_js(similar_games, 'similar_games.js')
+
+def download_app_tags(game_id):
+  soup = get_soup(f'https://store.steampowered.com/app/{game_id}')
+  
+  tags_for_this_game = []
+  soup.find('div', {'class': 'popular_tags'})
+  for item in soup.find_all('a', {'class': 'app_tag'}):
+    # These tag IDs are in english; convert them before saving
+    global tag_name_to_id
+    tag_name = item.contents[0].strip()
+    tags_for_this_game.append(tag_name_to_id[tag_name])
+    
+  game_tags = load_json('game_tags.js')
+  game_tags[game_id] = tags_for_this_game
+  dump_js(game_tags, 'game_tags.js')
 
 if __name__ == '__main__':
   # Refresh static data only once per hour, when this script runs
@@ -147,6 +164,7 @@ if __name__ == '__main__':
     print(f'Downloading data for game {game_id}')
     try:
       if download_app_details(game_id):
+        download_app_tags(game_id)
         download_similar_games(game_id)
         download_review_details(game_id)
     except requests.exceptions.HTTPError:
