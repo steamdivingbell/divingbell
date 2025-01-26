@@ -75,8 +75,14 @@ function load_rating_data() {
       positive = parseInt(positive)
       total = parseInt(total)
 
-      var perc = positive / (total + 1)
+      var perc = total == 0 ? 0 : positive / total
+
+      // Secondary rating which is more fair for sparsely-rated games
+      // See https://steamdb.info/blog/steamdb-rating
+      var gemRating = perc - (perc - 0.5) * Math.pow(2, -Math.log10(total + 1));
+
       // Rating names according to https://reddit.com/r/Steam/comments/ivz45n/
+      // (To be removed; this is actually directly available from the APIs)
       var ratingNames = []
       if (total < 50) {
         ratingNames = [[0.80, 'Positive'],      [0.70, 'Mostly Positive'], [0.40, 'Mixed'], [0.20, 'Mostly Negative'], [0.00, 'Negative']]
@@ -89,24 +95,12 @@ function load_rating_data() {
 
       globalRatingData.set(gameId, {
         'total': total,
-        'positive': positive,
+        'positive': positive, // TODO: Unused
         'perc': perc,
+        'gemRating': gemRating,
         'ratingName': ratingName,
-        'isLowRated': perc < 0.80 || total < 500
+        'isLowRated': perc < 0.80 || total < 500,
       })
-    }
-  })
-  .then(r => fetch('bin/html5/bin/data/v2/reviews/gem.tsv'))
-  .then(r => r.text())
-  .then(r => {
-    for (var line of r.split('\n')) {
-      var [gameId, gemRating] = line.split('\t')
-      gameId = parseInt(gameId)
-      if (!globalRatingData.has(gameId)) continue
-
-      // TODO: I have no idea how this number is calculated -- but it should be possible to reverse-engineer the formula.
-      // It's possible that it's using https://steamdb.info/blog/steamdb-rating/#javascript-implementation (or something similar)?
-      globalRatingData.get(gameId)['gemRating'] = parseFloat(gemRating)
     }
   })
 }

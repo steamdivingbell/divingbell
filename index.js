@@ -5,20 +5,12 @@ window.onload = function() {
   // - Require games to include tag 'X'
   // - Require games to exclude tag 'Y'
   // - Make it easier to pick a starting game
+  // All of the above require a 'search' feature. Le sigh.
 
   Promise.all([load_game_data(), load_rating_data(), load_tag_data()])
   .then(r => {
     var params = new URLSearchParams(window.location.search)
     setActiveGame(parseInt(params.get('appid')) || 210970)
-  })
-  .then(r => {
-    var acc = {}
-    for (var [gameId, data] of globalRatingData.entries()) {
-      if (data.positive == 10 && data.gemRating != undefined) {
-        acc[data.total] = data.gemRating
-      }
-    }
-    console.log(acc)
   })
 }
 

@@ -95,8 +95,7 @@ function gem_matches(gameId) {
   var games = []
   for (var [game, data] of globalRatingData.entries()) {
     if (game == gameId) continue // Don't recommend the current game
-    // TODO: Should probably filter based on gem score, not raw %. I do need to know what the hell that is though.
-    if (data.perc > 0.80 && data.total < 500) games.push(game)
+    if (data.gemRating > 0.80 && data.total < 500) games.push(game)
   }
 
   return sort_games_by_tags(games, gameId)
