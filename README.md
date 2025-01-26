@@ -8,16 +8,16 @@ The current state of this project is:
 - [ ] Not working
 - [ ] Barely functional
 - [ ] Functional
-- [X] Feature parity
-- [ ] Extended development
+- [ ] Feature parity
+- [X] Extended development
 - [ ] EOL
 
 # License
 
 Much like the original, this code is under the MIT license -- see [the license](https://github.com/jbzdarkid/divingbell/blob/master/LICENSE.md) for details.
 
-The data files are not present in this repo -- but at some point I will be scraping data from steam to power this project.
+This repo also contains the raw data files (in the `data/` folder), which have been download and/or scraped from Steam.
 All the usual legally gray areas about scraping aside, please don't assume that I own any scraped data.
 
 # An overview
-TBD, once the project works. Hopefully it'll work just like the original.
+TBD, once the project works. Hopefully it'll work just like the original, maybe with some extra features.
