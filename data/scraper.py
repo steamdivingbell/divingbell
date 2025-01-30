@@ -156,7 +156,9 @@ if __name__ == '__main__':
   print(f'Fetched {len(fetched_games)} of {len(all_games)} ({len(deleted_games)} deleted)')
 
   # Randomly refresh until 2 minutes before the next job to allow for some processing time (git push, etc)
-  end_time = datetime.now().replace(minute=0, second=0) + timedelta(minutes=100)
+  end_time = datetime.now()
+  while end_time.minute < 40:
+    end_time += timedelta(minutes=1)
   while datetime.now() < end_time:
     # For now, only sample from unfetched games.
     game_id = random.choice(list(unfetched_games))
@@ -168,7 +170,8 @@ if __name__ == '__main__':
         download_app_tags(game_id)
         download_similar_games(game_id)
         download_review_details(game_id)
-    except requests.exceptions.HTTPError:
-      pass # HTTP errors are usually a server timeout -- we can come back to these games later.
+    except requests.exceptions.RequestException:
+      pass # Any kind of network error should be considered transient -- we will come back to this game later.
+
     # The throttling limit for app details is 40 calls per minute, this is a reasonably generous sleep.
     sleep(5)
