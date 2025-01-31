@@ -45,7 +45,9 @@ function set(id, key, value) {
   }
 }
 
+// Global objects used across functions
 var previousGames = [] // Keep track of previous games so that we can use the 'back' button to go back.
+var pageNo = 0 // Keep track of each page of results so that we can use 'more' to get more results
 function setActiveGame(gameId) {
   loadAboutGame(gameId)
   pageNo = 0 // Reset back to the first page of results
@@ -103,7 +105,6 @@ ${gameName} is a "default" match, since it is directly recommended by ${baseGame
   }
 }
 
-var pageNo = 0 // Global, used for 'back' and 'more' buttons
 function loadImages(baseGameId) {
   var r_gems = document.getElementById('r_gems').className == 'toggle'
   var r_tags = document.getElementById('r_tags').className == 'toggle'
