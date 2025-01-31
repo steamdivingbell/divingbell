@@ -160,7 +160,7 @@ def refresh_game(game_id):
 if __name__ == '__main__':
   # The job should run until 2 minutes before the next job, to allow for some processing time (git push, etc)
   end_time = datetime.now()
-  while end_time.minute < 40:
+  while end_time.minute != 40:
     end_time += timedelta(minutes=1)
 
   # Refresh static data only once per hour, when this script runs
