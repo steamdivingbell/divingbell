@@ -77,7 +77,7 @@ function loadGameDetails(gameId) {
   .then(r => r.json())
   .then(r => {
     var gameDetails = {
-      'description': r.short_description,
+      'description': '',
       'price': 'Unknown',
       'tags': [],
       'genres': [],
@@ -86,9 +86,13 @@ function loadGameDetails(gameId) {
       'screenshots': [],
       'video': null,
     }
+    // The description is HTML-escaped, so we need to unescape it.
+    var pseudoHtml = '<div>' + r.short_description + '</div>'
+    gameDetails.description = new DOMParser().parseFromString(pseudoHtml, 'text/html').documentElement.textContent;
+
     if (r.genres != null) gameDetails.genres = r.genres.map(g => g.description)
     if (r.categories != null) gameDetails.categories = r.categories.map(c => c.description)
-    if (r.screenshots != null) gameDetails.screenshots = r.screenshots.map(s => s.path_full)
+    if (r.screenshots != null) gameDetails.screenshots = r.screenshots.map(s => s.path_full.replace('http://', 'https://'))
 
     if (window.game_tags[gameId] != null) {
       gameDetails.tags = window.game_tags[gameId].map(tag => globalTagData.get(tag).name)
@@ -101,7 +105,7 @@ function loadGameDetails(gameId) {
     if (r.platforms.mac)     gameDetails.platforms.push('Mac')
     if (r.platforms.linux)   gameDetails.platforms.push('Linux')
 
-    if (r.movies != null && r.movies.length > 0) gameDetails['video'] = r.movies[0].webm.max
+    if (r.movies != null && r.movies.length > 0) gameDetails['video'] = r.movies[0].webm.max.replace('http://', 'https://')
 
     return gameDetails
   })

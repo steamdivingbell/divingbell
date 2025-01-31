@@ -9,10 +9,10 @@ window.onload = function() {
 
   window.loadDataFiles()
   var params = new URLSearchParams(window.location.search)
-  if (params.has('appid')) {
+  if (params.has('appid') && window.globalRatingData.has(params.get('appid'))) {
     setActiveGame(params.get('appid'))
   } else {
-    // Order games by raw (steam) rating
+    // Order games by adjusted gem rating, ignoring games with <500 reviews
     var games = []
     for (var [gameId, data] of window.globalRatingData) {
       if (!data.isLowRated) games.push([1-data.sortKey, gameId])

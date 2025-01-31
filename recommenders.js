@@ -22,36 +22,36 @@ Set.prototype.difference = Set.prototype.difference || function(other) {
 }
 
 // "Default" matches, directly from steam's "more like this" recommendations
-function default_matches(gameId) {
-  return Array.from(globalGameData.get(gameId).similar)
+function default_matches(baseGameId) {
+  return Array.from(globalGameData.get(baseGameId).similar)
 }
 
 // "Reverse" is just "more like this" but inverse-lookup, which we have already indexed
-function reverse_matches(gameId) {
+function reverse_matches(baseGameId) {
   var games = []
-  for (var game of globalGameData.get(gameId).reverse) {
+  for (var gameId of globalGameData.get(baseGameId).reverse) {
     if (globalRatingData.get(gameId).isLowRated) continue // Don't recommend poorly-rated games
-    games.push(game)
+    games.push(gameId)
   }
-  return sort_games_by_tags(games, gameId)
+  return sort_games_by_tags(games, baseGameId)
 }
 
 // "Loose" is a 2x 'default' match, excluding the default matches themselves.
-function loose_matches(gameId) {
-  var siblings = globalGameData.get(gameId).similar
+function loose_matches(baseGameId) {
+  var siblings = globalGameData.get(baseGameId).similar
   var games = new Set()
 
   // Add all second-generation siblings, if they're not immediate siblings and also not us.
   for (var sibling of siblings) {
     for (var grandSibling of globalGameData.get(sibling).similar) {
-      if (grandSibling == gameId) continue // Don't recommend ourselves
+      if (grandSibling == baseGameId) continue // Don't recommend ourselves
       if (siblings.has(grandSibling)) continue // Don't recommend immediate siblings
       if (globalRatingData.get(grandSibling).isLowRated) continue // Don't recommend poorly-rated games
       games.add(grandSibling)
     }
   }
 
-  return sort_games_by_tags(Array.from(games), gameId)
+  return sort_games_by_tags(Array.from(games), baseGameId)
 }
 
 // These were the original 'culledTags', although I might change them at some point.
@@ -59,53 +59,53 @@ var REQUIRED_CATEGORY_MATCHES = new Set(['genre', 'theme', 'viewpoint', 'rpg'])
 
 // "Tags" matches games based solely on % of matching steam tags.
 // However, we only want to recommend similar games, so we require matching tags in some overall categories.
-function tag_matches(gameId) {
+function tag_matches(baseGameId) {
   var requiredTags = new Set()
   var requiredCategories = new Set()
-  for (var tag of globalGameData.get(gameId).tags) {
-    var tagData = globalTagData.get(tag)
+  for (var tagId of globalGameData.get(baseGameId).tags) {
+    var tagData = globalTagData.get(tagId)
     if (tagData.isWeak) continue
     if (REQUIRED_CATEGORY_MATCHES.has(tagData.category)) {
-      requiredTags.add(tag)
+      requiredTags.add(tagId)
       requiredCategories.add(tagData.category)
     }
   }
 
   var games = []
-  for (var [game, data] of globalGameData.entries()) {
-    if (game == gameId) continue // Don't recommend the current game
+  for (var [gameId, data] of globalGameData.entries()) {
+    if (gameId == baseGameId) continue // Don't recommend the current game
     if (globalRatingData.get(gameId).isLowRated) continue // Don't recommend poorly-rated games
 
     // Ensure that this game matches at least one tag in each category
     var missingCategories = new Set(requiredCategories)
-    for (var tag of data.tags) {
-      if (requiredTags.has(tag)) {
-        missingCategories.delete(globalTagData.get(tag).category)
+    for (var tagId of data.tags) {
+      if (requiredTags.has(tagId)) {
+        missingCategories.delete(globalTagData.get(tagId).category)
         if (missingCategories.size === 0) break
       }
     }
-    if (missingCategories.size === 0) games.push(game)
+    if (missingCategories.size === 0) games.push(gameId)
   }
 
-  return sort_games_by_tags(games, gameId)
+  return sort_games_by_tags(games, baseGameId)
 }
 
 // "Hidden gems" is the tags matcher but only for games above some % rating and below some # total ratings. Not sure what those numbers are, yet.
-function gem_matches(gameId) {
+function gem_matches(baseGameId) {
   var games = []
-  for (var [game, data] of globalRatingData.entries()) {
-    if (game == gameId) continue // Don't recommend the current game
-    if (data.isHiddenGem) games.push(game)
+  for (var [gameId, data] of globalRatingData.entries()) {
+    if (gameId == baseGameId) continue // Don't recommend the current game
+    if (data.isHiddenGem) games.push(gameId)
   }
 
-  return sort_games_by_tags(games, gameId)
+  return sort_games_by_tags(games, baseGameId)
 }
 
 // Used in many places for tie breaks, also used directly for the tag recommender
-function sort_games_by_tags(games, gameId) {
+function sort_games_by_tags(games, baseGameId) {
   // Inverse sort so that the largest numbers (highest matches) are topmost. Ties broken by adjusted positive rating.
   games.sort((a, b) =>
-    Math.sign(compare_candidates(gameId, b) - compare_candidates(gameId, a))
+    Math.sign(compare_candidates(baseGameId, b) - compare_candidates(baseGameId, a))
     || Math.sign(globalRatingData.get(b).sortKey - globalRatingData.get(a).sortKey))
   return games
 }
