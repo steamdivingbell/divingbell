@@ -93,7 +93,7 @@ def download_tags():
 def download_app_details(game_id):
   """https://github.com/Revadike/InternalSteamWebAPI/wiki/Get-App-Details"""
   try:
-    app_details = get(f'https://store.steampowered.com/api/appdetails?appids={game_id}')[game_id]
+    app_details = get(f'https://store.steampowered.com/api/appdetails?appids={game_id}&cc=en')[game_id]
     # Some games redirect to other games -- if the game we get back is not the one we ask for, we should not list it in our system.
     if app_details['success'] and str(app_details['data']['steam_appid']) == game_id:
       dump_json(app_details['data'], f'app_details/{game_id}.json')
@@ -144,7 +144,25 @@ def download_app_tags(game_id):
   game_tags[game_id] = tags_for_this_game
   dump_js(game_tags, 'game_tags.js')
 
+def refresh_game(game_id):
+  print(f'Downloading data for game {game_id}')
+  try:
+    if download_app_details(game_id):
+      download_app_tags(game_id)
+      download_similar_games(game_id)
+      download_review_details(game_id)
+  except requests.exceptions.RequestException:
+    pass # Any kind of network error should be considered transient -- skip this game and we'll come back later.
+
+  # The throttling limit for app details is 40 calls per minute, so this is a reasonably generous sleep.
+  sleep(5)
+
 if __name__ == '__main__':
+  # The job should run until 2 minutes before the next job, to allow for some processing time (git push, etc)
+  end_time = datetime.now()
+  while end_time.minute < 40:
+    end_time += timedelta(minutes=1)
+
   # Refresh static data only once per hour, when this script runs
   download_app_list()
   download_tags()
@@ -153,25 +171,32 @@ if __name__ == '__main__':
   deleted_games = set(load_json('deleted_games.js').keys())
   fetched_games = set((path.stem for path in Path('app_details').glob('*.json')))
   unfetched_games = all_games - fetched_games - deleted_games
+
   print(f'Fetched {len(fetched_games)} of {len(all_games)} ({len(deleted_games)} deleted)')
 
-  # Randomly refresh until 2 minutes before the next job to allow for some processing time (git push, etc)
-  end_time = datetime.now()
-  while end_time.minute < 40:
-    end_time += timedelta(minutes=1)
+  # Start with refreshing unfetched games
+  for game in unfetched_games:
+    refresh_game(game)
+    if datetime.now() >= end_time:
+      exit()
+
+  # Then, refresh games in order from where we left off
+  ordered_games = sorted(list(all_games))
+  with Path('last_fetched.txt').open('r') as f:
+    last_fetched = f.read()
+    index = ordered_games.find(last_fetched)
+
   while datetime.now() < end_time:
-    # For now, only sample from unfetched games.
-    game_id = random.choice(list(unfetched_games))
-    unfetched_games.remove(game_id)
+    if index >= len(ordered_games):
+      index = 0 # If we get through all the games, restart from the beginning
 
-    print(f'Downloading data for game {game_id}')
-    try:
-      if download_app_details(game_id):
-        download_app_tags(game_id)
-        download_similar_games(game_id)
-        download_review_details(game_id)
-    except requests.exceptions.RequestException:
-      pass # Any kind of network error should be considered transient -- we will come back to this game later.
+    game = ordered_games[index]
+    with Path('last_fetched.txt').open('w') as f:
+      f.write(game)
 
-    # The throttling limit for app details is 40 calls per minute, this is a reasonably generous sleep.
-    sleep(5)
+    if game in deleted_games: # If a game is deleted, it cannot be un-deleted (I think)
+      continue
+    if game in unfetched_games: # We already fetched these above
+      continue
+
+    refresh_game(game)

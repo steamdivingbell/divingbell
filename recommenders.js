@@ -63,7 +63,7 @@ function tag_matches(gameId) {
   var requiredTags = new Set()
   var requiredCategories = new Set()
   for (var tag of globalGameData.get(gameId).tags) {
-    var tagData = globalTagData[tag]
+    var tagData = globalTagData.get(tag)
     if (tagData.isWeak) continue
     if (REQUIRED_CATEGORY_MATCHES.has(tagData.category)) {
       requiredTags.add(tag)
@@ -80,7 +80,7 @@ function tag_matches(gameId) {
     var missingCategories = new Set(requiredCategories)
     for (var tag of data.tags) {
       if (requiredTags.has(tag)) {
-        missingCategories.delete(globalTagData[tag].category)
+        missingCategories.delete(globalTagData.get(tag).category)
         if (missingCategories.size === 0) break
       }
     }
@@ -116,12 +116,12 @@ function compare_candidates(gameA, gameB) {
 
   var totalWeight = 0
   for (var tag of tagsA.union(tagsB)) {
-    totalWeight += globalTagData[tag].weight
+    totalWeight += globalTagData.get(tag).weight
   }
 
   var matchWeight = 0
   for (var tag of tagsA.intersection(tagsB)) {
-    matchWeight += globalTagData[tag].weight
+    matchWeight += globalTagData.get(tag).weight
   }
 
   return matchWeight / totalWeight
@@ -134,18 +134,18 @@ function compare_candidates_verbose(gameA, gameB) {
 
   var totalWeight = 0
   for (var tag of tagsA.union(tagsB)) {
-    totalWeight += globalTagData[tag].weight
-    var category = globalTagData[tag].category
+    totalWeight += globalTagData.get(tag).weight
+    var category = globalTagData.get(tag).category
     if (category != null && !tagData.has(category)) tagData.set(category, {'weight': 0, 'tags': []})
   }
 
   var matchWeight = 0
   for (var tag of tagsA.intersection(tagsB)) {
-    matchWeight += globalTagData[tag].weight
-    var category = globalTagData[tag].category
+    matchWeight += globalTagData.get(tag).weight
+    var category = globalTagData.get(tag).category
     if (tagData.has(category)) {
-      tagData.get(category).weight += globalTagData[tag].weight
-      tagData.get(category).tags.push(globalTagData[tag].name)
+      tagData.get(category).weight += globalTagData.get(tag).weight
+      tagData.get(category).tags.push(globalTagData.get(tag).name)
     }
   }
 

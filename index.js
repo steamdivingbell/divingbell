@@ -12,13 +12,16 @@ window.onload = function() {
   if (params.has('appid')) {
     setActiveGame(params.get('appid'))
   } else {
-    // Order games by adjusted rating
-    var games = Array.from(window.globalGameData.keys())
-    games.sort((a, b) => Math.sign(globalRatingData.get(b).sortKey - globalRatingData.get(a).sortKey))
+    // Order games by raw (steam) rating
+    var games = []
+    for (var [gameId, data] of window.globalRatingData) {
+      if (!data.isLowRated) games.push([1-data.sortKey, gameId])
+    }
+    games.sort()
     
-    // Then pick one of the top 100 (randomly) -- these should be games that people should be familiar with (I hope).
-    var index = Math.floor(Math.random() * 100)
-    setActiveGame(games[index])
+    // Then pick one of the top 20 (randomly) -- these should be games that people should be familiar with (I hope).
+    var index = Math.floor(Math.random() * 20)
+    setActiveGame(games[index][1])
   }
 }
 
@@ -262,22 +265,24 @@ function loadAboutGame(gameId) {
     set('tags', 'innerText', r.tags.join(', '))
     set('rating', 'innerText', globalRatingData.get(gameId).ratingText)
 
+    var max_photos = 4
     if (r.video != null) {
       set('video', 'display', null)
       set('video', 'src', r.video)
-      set('photo-1', 'src', r.photos[0])
-      set('photo-2', 'src', r.photos[1])
-      set('photo-3', 'src', r.photos[2])
-      set('photo-4', 'display', 'none')
-      set('photo-4', 'src', '')
+      max_photos--
     } else {
-      set('video', 'src', '')
       set('video', 'display', 'none')
-      set('photo-1', 'src', r.photos[0])
-      set('photo-2', 'src', r.photos[1])
-      set('photo-3', 'src', r.photos[2])
-      set('photo-4', 'src', r.photos[3])
-      set('photo-4', 'display', null)
+      set('video', 'src', '')
+    }      
+
+    for (var i = 0; i < 4; i++) {
+      if (i < max_photos && r.screenshots.length > i) {
+        set('photo-' + i, 'display', null)
+        set('photo-' + i, 'src', r.screenshots[i])
+      } else {
+        set('photo-' + i, 'display', 'none')
+        set('photo-' + i, 'src', '')
+      }
     }
   })
 }

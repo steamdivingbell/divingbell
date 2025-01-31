@@ -3,12 +3,11 @@ var globalRatingData = new Map()
 var globalTagData = new Map()
 
 window.loadDataFiles = function() {
-  for (var gameId in window.game_names) {
-    
-    tag_ids = window.tags
+  // We use 'games with reviews' as our master list of valid games.
+  for (var gameId in window.reviews) {
     globalGameData.set(gameId, {
       'name': window.game_names[gameId],
-      'tags': window.game_tags[gameId],
+      'tags': new Set(window.game_tags[gameId]),
       'similar': new Set(),
       'reverse': new Set(),
     })
@@ -33,7 +32,8 @@ window.loadDataFiles = function() {
 
   for (var gameId in window.similar_games) {
     for (var similarGame of window.similar_games[gameId]) {
-      if (!globalRatingData.has(similarGame)) continue // TODO: Hopefully this is not possible once we have full data.
+      if (!globalGameData.has(gameId)) continue // TODO: Hopefully this is not possible once we have full data.
+      if (!globalGameData.has(similarGame)) continue // TODO: Hopefully this is not possible once we have full data.
 
       globalGameData.get(gameId).similar.add(similarGame)
       globalGameData.get(similarGame).reverse.add(gameId)
@@ -78,12 +78,20 @@ function loadGameDetails(gameId) {
   .then(r => {
     var gameDetails = {
       'description': r.short_description,
-      'genres': r.genres.map(g => g.description),
       'price': 'Unknown',
+      'tags': [],
+      'genres': [],
       'platforms': [],
-      'categories': r.categories.map(c => c.description),
-      'tags': Array.from(globalGameData.get(gameId).tags).map(tag => globalTagData[tag].name),
-      'photos': r.screenshots.map(s => s.path_full),
+      'categories': [],
+      'screenshots': [],
+      'video': null,
+    }
+    if (r.genres != null) gameDetails.genres = r.genres.map(g => g.description)
+    if (r.categories != null) gameDetails.categories = r.categories.map(c => c.description)
+    if (r.screenshots != null) gameDetails.screenshots = r.screenshots.map(s => s.path_full)
+
+    if (window.game_tags[gameId] != null) {
+      gameDetails.tags = window.game_tags[gameId].map(tag => globalTagData.get(tag).name)
     }
 
     if (r.is_free) gameDetails.price = 'Free'
