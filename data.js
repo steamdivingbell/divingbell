@@ -8,8 +8,6 @@ window.loadDataFiles = function() {
     globalGameData.set(gameId, {
       'name': window.game_names[gameId],
       'tags': new Set(window.game_tags[gameId]),
-      'similar': new Set(),
-      'reverse': new Set(),
     })
   }
 
@@ -28,16 +26,6 @@ window.loadDataFiles = function() {
       'isLowRated': perc < 0.80 || total < 500,
       'isHiddenGem': gemRating >= 0.80 && total < 500,
     })
-  }
-
-  for (var gameId in window.similar_games) {
-    for (var similarGame of window.similar_games[gameId]) {
-      if (!globalGameData.has(gameId)) continue // TODO: Hopefully this is not possible once we have full data.
-      if (!globalGameData.has(similarGame)) continue // TODO: Hopefully this is not possible once we have full data.
-
-      globalGameData.get(gameId).similar.add(similarGame)
-      globalGameData.get(similarGame).reverse.add(gameId)
-    }
   }
 
   // TODO: There might be more things we should weight now.

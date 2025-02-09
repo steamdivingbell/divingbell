@@ -23,29 +23,32 @@ Set.prototype.difference = Set.prototype.difference || function(other) {
 
 // "Default" matches, directly from steam's "more like this" recommendations
 function default_matches(baseGameId) {
-  return Array.from(globalGameData.get(baseGameId).similar)
+  return window.similar_games[baseGameId]
 }
 
 // "Reverse" is just "more like this" but inverse-lookup, which we have already indexed
 function reverse_matches(baseGameId) {
   var games = []
-  for (var gameId of globalGameData.get(baseGameId).reverse) {
+  for (var gameId in window.similar_games) {
+    if (!globalRatingData.has(gameId)) continue // TODO: Incomplete data
     if (globalRatingData.get(gameId).isLowRated) continue // Don't recommend poorly-rated games
-    games.push(gameId)
+    if (window.similar_games[gameId].includes(baseGameId)) games.push(gameId)
   }
   return sort_games_by_tags(games, baseGameId)
 }
 
 // "Loose" is a 2x 'default' match, excluding the default matches themselves.
 function loose_matches(baseGameId) {
-  var siblings = globalGameData.get(baseGameId).similar
+  var siblings = window.similar_games[baseGameId]
   var games = new Set()
 
   // Add all second-generation siblings, if they're not immediate siblings and also not us.
   for (var sibling of siblings) {
-    for (var grandSibling of globalGameData.get(sibling).similar) {
+    var grandSiblings = window.similar_games[sibling] || [] // TODO: Should be impossible with correct data
+    for (var grandSibling of grandSiblings) {
       if (grandSibling == baseGameId) continue // Don't recommend ourselves
-      if (siblings.has(grandSibling)) continue // Don't recommend immediate siblings
+      if (siblings.includes(grandSibling)) continue // Don't recommend immediate siblings
+      if (!globalRatingData.has(grandSibling)) continue // TODO: Incomplete data
       if (globalRatingData.get(grandSibling).isLowRated) continue // Don't recommend poorly-rated games
       games.add(grandSibling)
     }
