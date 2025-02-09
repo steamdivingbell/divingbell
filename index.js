@@ -29,7 +29,12 @@ function set(id, key, value) {
     elem.innerText = value
   } else if (key == 'hover') {
     elem.onmouseenter = () => {
-      var timer = setTimeout(value, 1000)
+      // Once the mouse enters this element, wait for 1 second of no mouse movement, then call the callback.
+      var timer = setTimeout(value, 500)
+      elem.onmousemove = () => {
+        clearTimeout(timer)
+        timer = setTimeout(value, 500)
+      }
       elem.onmouseleave = () => { clearTimeout(timer) }
     }
   } else if (key == 'click') {
