@@ -1,6 +1,4 @@
 window.onload = function() {
-  // For local development, run chrome with --allow-file-access-from-files
-  // I might be able to work around that at some point by using actual JS files.
   // Outstanding ideas from Mr. diving bell:
   // - Require games to include tag 'X'
   // - Require games to exclude tag 'Y'
@@ -71,7 +69,7 @@ function setImageCard(loc, data) {
   set(loc + '-cell', 'style', styles[recommender])
   set(loc + '-title', 'innerText', recommender)
   set(loc + '-title', 'href', 'https://store.steampowered.com/app/' + gameId)
-  set(loc + '-image', 'src', 'https://cdn.akamai.steamstatic.com/steam/apps/' + gameId + '/header.jpg')
+  set(loc + '-image', 'src', `https://cdn.akamai.steamstatic.com/steam/apps/${gameId}/header.jpg`)
   
   if (gameId == null) return // Ran out of recommendations
 

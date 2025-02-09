@@ -40,6 +40,9 @@ window.loadDataFiles = function() {
     }
   }
 
+  // TODO: There might be more things we should weight now.
+  var CATEGORY_WEIGHTS = {'subgenre': 4, 'viewpoint': 3, 'theme': 2, 'players': 2, 'feature': 2, 'time': 2, 'story': 2, 'genre': 2}
+
   for (var tag in window.tags) {
     var categories = window.tags[tag].categories || []
 
@@ -47,9 +50,7 @@ window.loadDataFiles = function() {
     var bestCategory = null
     var bestWeight = 0
     for (var category of categories) {
-      // TODO: There might be more things we should weight now.
-      var categoryWeights = {'subgenre': 4, 'viewpoint': 3, 'theme': 2, 'players': 2, 'feature': 2, 'time': 2, 'story': 2, 'genre': 2}
-      var categoryWeight = categoryWeights[category] || 1
+      var categoryWeight = CATEGORY_WEIGHTS[category] || 1
       if (categoryWeight > bestWeight) {
         bestWeight = categoryWeight
         bestCategory = category
