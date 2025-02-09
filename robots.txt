@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /data/*.js
+Disallow: /data/app_details/*.json

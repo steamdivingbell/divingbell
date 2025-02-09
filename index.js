@@ -1,25 +1,26 @@
 window.onload = function() {
-  // For local development, run chrome with --allow-file-access-from-files
-  // I might be able to work around that at some point by using actual JS files.
   // Outstanding ideas from Mr. diving bell:
   // - Require games to include tag 'X'
   // - Require games to exclude tag 'Y'
   // - Make it easier to pick a starting game
+  // All of the above require a 'search' feature. Le sigh.
 
-  Promise.all([load_game_data(), load_rating_data(), load_tag_data()])
-  .then(r => {
-    var params = new URLSearchParams(window.location.search)
-    setActiveGame(parseInt(params.get('appid')) || 210970)
-  })
-  .then(r => {
-    var acc = {}
-    for (var [gameId, data] of globalRatingData.entries()) {
-      if (data.positive == 10 && data.gemRating != undefined) {
-        acc[data.total] = data.gemRating
-      }
+  window.loadDataFiles()
+  var params = new URLSearchParams(window.location.search)
+  if (params.has('appid') && window.globalRatingData.has(params.get('appid'))) {
+    setActiveGame(params.get('appid'))
+  } else {
+    // Order games by adjusted gem rating, ignoring games with <500 reviews
+    var games = []
+    for (var [gameId, data] of window.globalRatingData) {
+      if (!data.isLowRated) games.push([1-data.sortKey, gameId])
     }
-    console.log(acc)
-  })
+    games.sort()
+    
+    // Then pick one of the top 20 (randomly) -- these should be games that people should be familiar with (I hope).
+    var index = Math.floor(Math.random() * 20)
+    setActiveGame(games[index][1])
+  }
 }
 
 function set(id, key, value) {
@@ -28,7 +29,12 @@ function set(id, key, value) {
     elem.innerText = value
   } else if (key == 'hover') {
     elem.onmouseenter = () => {
-      var timer = setTimeout(value, 1000)
+      // Once the mouse enters this element, wait for 1 second of no mouse movement, then call the callback.
+      var timer = setTimeout(value, 500)
+      elem.onmousemove = () => {
+        clearTimeout(timer)
+        timer = setTimeout(value, 500)
+      }
       elem.onmouseleave = () => { clearTimeout(timer) }
     }
   } else if (key == 'click') {
@@ -42,7 +48,9 @@ function set(id, key, value) {
   }
 }
 
+// Global objects used across functions
 var previousGames = [] // Keep track of previous games so that we can use the 'back' button to go back.
+var pageNo = 0 // Keep track of each page of results so that we can use 'more' to get more results
 function setActiveGame(gameId) {
   loadAboutGame(gameId)
   pageNo = 0 // Reset back to the first page of results
@@ -66,7 +74,9 @@ function setImageCard(loc, data) {
   set(loc + '-cell', 'style', styles[recommender])
   set(loc + '-title', 'innerText', recommender)
   set(loc + '-title', 'href', 'https://store.steampowered.com/app/' + gameId)
-  set(loc + '-image', 'src', 'https://cdn.akamai.steamstatic.com/steam/apps/' + gameId + '/header.jpg')
+  set(loc + '-image', 'src', `https://cdn.akamai.steamstatic.com/steam/apps/${gameId}/header.jpg`)
+  
+  if (gameId == null) return // Ran out of recommendations
 
   var gameName = globalGameData.get(gameId).name
   var baseGameName = globalGameData.get(baseGameId).name
@@ -98,7 +108,6 @@ ${gameName} is a "default" match, since it is directly recommended by ${baseGame
   }
 }
 
-var pageNo = 0 // Global, used for 'back' and 'more' buttons
 function loadImages(baseGameId) {
   var r_gems = document.getElementById('r_gems').className == 'toggle'
   var r_tags = document.getElementById('r_tags').className == 'toggle'
@@ -165,6 +174,7 @@ function loadImages(baseGameId) {
         }
       }
     }
+    // Fallback to Steam's recommendations if we run out of our recommenders
     for (var i = 0; /**/; i++) {
       if (matches.length == 8) break
       if (similar.length == 0) break
@@ -175,6 +185,8 @@ function loadImages(baseGameId) {
         shownGames.add(gameId)
       }
     }
+    // Placeholder if we run out of everything so we don't crash
+    while (matches.length < 8) matches.push([null, null, baseGameId])
   }
 
   setImageCard('mm', [baseGameId, 'Selected', baseGameId])
@@ -186,7 +198,7 @@ function loadImages(baseGameId) {
   setImageCard('bm', matches[5])
   setImageCard('bl', matches[6])
   setImageCard('ml', matches[7])
-  
+
   // Setup alt text for the various dynamic buttons
   set('r_gems', 'title', (r_gems ? 'Disable' : 'Enable') + ' the "Gems" recommender')
   set('r_tags', 'title', (r_tags ? 'Disable' : 'Enable') + ' the "Tags" recommender')
@@ -237,13 +249,14 @@ function setupButtons(gameId) {
     loadImages(gameId)
   })
 }
-  
+
 function loadAboutGame(gameId) {
-  if (document.getElementById('open-app').href  == `steam://store/${gameId}`) return // Already selected
+  // If this game is already loaded, don't reload it (it causes a flicker and restarts the video)
+  if (document.getElementById('open-app').href == `steam://store/${gameId}`) return
 
   set('game-title', 'innerText', globalGameData.get(gameId).name)
 
-  set('open-web', 'href', `https://store.steampowered.com/app/${gameId}?utm_campaign=divingbell`)
+  set('open-web', 'href', `https://store.steampowered.com/app/${gameId}?utm_campaign=steamdivingbell`)
   set('open-app', 'href', `steam://store/${gameId}`)
 
   loadGameDetails(gameId)
@@ -254,27 +267,26 @@ function loadAboutGame(gameId) {
     set('platforms', 'innerText', r.platforms.join(', '))
     set('categories', 'innerText', r.categories.join(', '))
     set('tags', 'innerText', r.tags.join(', '))
+    set('rating', 'innerText', globalRatingData.get(gameId).ratingText)
 
-    var data = globalRatingData.get(gameId)
-    var ratingText = `${data.ratingName} (${Math.trunc(100 * data.perc)}% — ${data.total} ratings)`
-    set('rating', 'innerText', ratingText)
-
+    var max_photos = 4
     if (r.video != null) {
       set('video', 'display', null)
       set('video', 'src', r.video)
-      set('photo-1', 'src', r.photos[0])
-      set('photo-2', 'src', r.photos[1])
-      set('photo-3', 'src', r.photos[2])
-      set('photo-4', 'display', 'none')
-      set('photo-4', 'src', '')
+      max_photos--
     } else {
-      set('video', 'src', '')
       set('video', 'display', 'none')
-      set('photo-1', 'src', r.photos[0])
-      set('photo-2', 'src', r.photos[1])
-      set('photo-3', 'src', r.photos[2])
-      set('photo-4', 'src', r.photos[3])
-      set('photo-4', 'display', null)
+      set('video', 'src', '')
+    }      
+
+    for (var i = 0; i < 4; i++) {
+      if (i < max_photos && r.screenshots.length > i) {
+        set('photo-' + i, 'display', null)
+        set('photo-' + i, 'src', r.screenshots[i])
+      } else {
+        set('photo-' + i, 'display', 'none')
+        set('photo-' + i, 'src', '')
+      }
     }
   })
 }

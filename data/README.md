@@ -1,0 +1,1 @@
+This folder contains information scraped from Steam and download from Steam's APIs. The copyright for the data is held by Valve Corporation, who created Steam and its APIs. Please don't take the files' presence in this repo as an implication that I own this data, or that you can claim ownership yourself.
