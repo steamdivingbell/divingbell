@@ -1,9 +1,5 @@
 window.onload = function() {
-  // Outstanding ideas from Mr. diving bell:
-  // - Require games to include tag 'X'
-  // - Require games to exclude tag 'Y'
-  // - Make it easier to pick a starting game
-  // All of the above require a 'search' feature. Le sigh.
+  setupDropdowns()
 
   window.loadDataFiles()
   var params = new URLSearchParams(window.location.search)
@@ -12,7 +8,7 @@ window.onload = function() {
   } else {
     // Order games by adjusted gem rating, ignoring games with <500 reviews
     var games = []
-    for (var [gameId, data] of window.globalRatingData) {
+    for (var [gameId, data] of window.globalRatingData.entries()) {
       if (!data.isLowRated) games.push([1-data.sortKey, gameId])
     }
     games.sort()
@@ -45,6 +41,38 @@ function set(id, key, value) {
     elem.style.display = value
   } else {
     elem.setAttribute(key, value)
+  }
+}
+
+function setupDropdowns() {
+  var gameSearch = document.getElementById('search_games_input')
+  var gameSearchList = document.getElementById('search_games_list')
+  gameSearch.addEventListener('pointerdown', () => {
+    gameSearch.value = ''
+    gameSearch.style.color = 'black'
+    gameSearchList.style.display = null
+    var topGames = [['620', 'Portal 2'], ['440', 'TF2'], ['0', 'Dota 2'], ['0', 'CS2']]
+    populateDropdown('search_games', topGames)
+  })
+}
+
+function populateDropdown(prefix, entries) {
+  for (var i = 0; i < 10; i++) {
+    var dropdownEntry = document.getElementById(prefix + '_' + i)
+    if (dropdownEntry == null) break
+    if (i < entries.length) {
+      dropdownEntry.style.display = null
+      dropdownEntry.innerText = entries[i][0]
+      dropdownEntry.onclick = entries[i][1]
+      dropdownEntry.onmouseenter = () => this.style.background = 'blue'
+      dropdownEntry.onmouseleave = () => this.style.background = 'white'
+    } else {
+      dropdownEntry.style.display = 'none'
+      dropdownEntry.innerText = ''
+      dropdownEntry.onclick = null
+      dropdownEntry.onmouseenter = null
+      dropdownEntry.onmouseleave = null
+    }
   }
 }
 

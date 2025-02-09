@@ -120,9 +120,24 @@
     <div id="rightside" style="flex-basis: 50%; display: block; padding: 0.5em">
       <div id="searchbars" style="display: flex; justify-content: space-around">
         <a target="_blank" href="https://www.github.com/steamdivingbell/divingbell">About</a>
-        <input id="search_games" type="text" value="Search for game" style="color: gray">
-        <input id="search_include" type="text" value="Included tags" style="color: gray">
-        <input id="search_exclude" type="text" value="Excluded tags" style="color: gray">
+        <div style="position:relative; width: 150px;">
+          <input id="search_games_input" type="text" value="Search for game" style="color: gray;width: 100%;">
+          <div id="search_games_list" style="position: absolute; width: 100%; height: 500px; display:none">
+            <div id="search_games_0" style="background:white; cursor:pointer"></div>
+            <div id="search_games_1" style="background:white; cursor:pointer"></div>
+            <div id="search_games_2" style="background:white; cursor:pointer"></div>
+            <div id="search_games_3" style="background:white; cursor:pointer"></div>
+            <div id="search_games_4" style="background:white; cursor:pointer"></div>
+          </div>
+        </div>
+        <div style="position:relative; width: 150px;">
+          <input id="search_include_input" type="text" value="Search for game" style="color: gray;width: 100%;">
+          <div id="search_include_list" style="position: absolute; width: 100%; height: 500px; display:none"></div>
+        </div>
+        <div style="position:relative; width: 150px;">
+          <input id="search_exclude_input" type="text" value="Search for game" style="color: gray;width: 100%;">
+          <div id="search_exclude_list" style="position: absolute; width: 100%; height: 500px; display:none"></div>
+        </div>
       </div>
       <hr width="100%">
       <div id="title-and-links" style="display: flex">
