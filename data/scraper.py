@@ -159,8 +159,9 @@ def refresh_game(game_id):
   sleep(5)
 
 if __name__ == '__main__':
-  if len(sys.argv) > 0:
-    for game in sys.argv:
+  if len(sys.argv) > 1:
+    for game in sys.argv[1:]:
+      print(game)
       refresh_game(game)
     exit()
 
