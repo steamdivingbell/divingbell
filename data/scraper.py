@@ -8,6 +8,7 @@ from pathlib import Path
 from time import sleep
 import json
 import random
+import sys
 
 import bs4
 import requests
@@ -158,6 +159,11 @@ def refresh_game(game_id):
   sleep(5)
 
 if __name__ == '__main__':
+  if len(sys.argv) > 0:
+    for game in sys.argv:
+      refresh_game(game)
+    exit()
+
   # The job should run until 2 minutes before the next job, to allow for some processing time (git push, etc)
   end_time = datetime.now()
   while end_time.minute != 40:

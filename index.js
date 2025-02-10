@@ -1,3 +1,8 @@
+// Other recommenders I thought of:
+// - 'Top' matches -- sort_by_tags for the top ~100/~1000 games (by some metric)
+// - 'New' matches -- sort_by_tags for games in the last week/month/year (probably year)
+// TODO: Add 'release date' to the description
+// TODO: Consider tagging app_details with the last refreshed time (not sure how I'd display that, per se)
 window.onload = function() {
   setupDropdowns()
 
@@ -6,16 +11,10 @@ window.onload = function() {
   if (params.has('appid') && window.globalRatingData.has(params.get('appid'))) {
     setActiveGame(params.get('appid'))
   } else {
-    // Order games by adjusted gem rating, ignoring games with <500 reviews
-    var games = []
-    for (var [gameId, data] of window.globalRatingData.entries()) {
-      if (!data.isLowRated) games.push([1-data.sortKey, gameId])
-    }
-    games.sort()
-    
     // Then pick one of the top 20 (randomly) -- these should be games that people should be familiar with (I hope).
     var index = Math.floor(Math.random() * 20)
-    setActiveGame(games[index][1])
+    var topGames = window.top_games()
+    setActiveGame(topGames[index][1])
   }
 }
 
@@ -44,6 +43,18 @@ function set(id, key, value) {
   }
 }
 
+function setActiveGameCallback(game) {
+  return () => {
+    var gameSearch = document.getElementById('search_games_input')
+    gameSearch.value = 'Search for game'
+    gameSearch.style.color = 'gray'
+    var gameSearchList = document.getElementById('search_games_list')
+    gameSearchList.style.display = 'none'
+
+    setActiveGame(game)
+  }
+}
+
 function setupDropdowns() {
   var gameSearch = document.getElementById('search_games_input')
   var gameSearchList = document.getElementById('search_games_list')
@@ -51,8 +62,32 @@ function setupDropdowns() {
     gameSearch.value = ''
     gameSearch.style.color = 'black'
     gameSearchList.style.display = null
-    var topGames = [['620', 'Portal 2'], ['440', 'TF2'], ['0', 'Dota 2'], ['0', 'CS2']]
-    populateDropdown('search_games', topGames)
+    var entries = []
+    for (var game of window.top_games()) {
+      entries.push([window.game_names[game], setActiveGameCallback(game)])
+      if (entries.length >= 5) break
+    }
+    populateDropdown('search_games', entries)
+  })
+  gameSearch.addEventListener('input', (event) => {
+    var entries = []
+    for (var game of window.top_games()) {
+      var game_name = window.game_names[game]
+      if (game_name == gameSearch.value) {
+        // Always list exact matches
+        entries.unshift([game_name, setActiveGameCallback(game)])
+        entries = entries.slice(0, 5)
+      } else if (entries.length < 5 && game_name.includes(gameSearch.value)) {
+        entries.push([game_name, setActiveGameCallback(game)])
+      }
+    }
+    populateDropdown('search_games', entries)
+  })
+  gameSearch.addEventListener('blur', (event) => {
+    if (event.relatedTarget != null) return // Actually a user was clicking on a list entry
+    gameSearch.value = 'Search for game'
+    gameSearchList.style.display = 'none'
+    gameSearch.style.color = 'gray'
   })
 }
 
@@ -64,8 +99,8 @@ function populateDropdown(prefix, entries) {
       dropdownEntry.style.display = null
       dropdownEntry.innerText = entries[i][0]
       dropdownEntry.onclick = entries[i][1]
-      dropdownEntry.onmouseenter = () => this.style.background = 'blue'
-      dropdownEntry.onmouseleave = () => this.style.background = 'white'
+      dropdownEntry.onmouseenter = (event) => event.currentTarget.style.background = 'lightblue'
+      dropdownEntry.onmouseleave = (event) => event.currentTarget.style.background = 'white'
     } else {
       dropdownEntry.style.display = 'none'
       dropdownEntry.innerText = ''

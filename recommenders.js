@@ -104,6 +104,17 @@ function gem_matches(baseGameId) {
   return sort_games_by_tags(games, baseGameId)
 }
 
+function top_games() {
+  // Order games by adjusted gem rating, ignoring games with <500 reviews
+  var games = []
+  for (var [gameId, data] of window.globalRatingData.entries()) {
+    if (!data.isLowRated) games.push(gameId)
+  }
+  games.sort((a, b) => Math.sign(window.globalRatingData.get(b).sortKey - window.globalRatingData.get(a).sortKey))
+  return games
+}
+
+
 // Used in many places for tie breaks, also used directly for the tag recommender
 function sort_games_by_tags(games, baseGameId) {
   // Inverse sort so that the largest numbers (highest matches) are topmost. Ties broken by adjusted positive rating.
