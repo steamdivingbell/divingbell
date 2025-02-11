@@ -9,6 +9,7 @@ from time import sleep
 import json
 import random
 import sys
+import traceback
 
 import bs4
 import requests
@@ -96,11 +97,15 @@ def download_app_details(game_id):
   try:
     app_details = get(f'https://store.steampowered.com/api/appdetails?appids={game_id}&cc=en')[game_id]
     # Some games redirect to other games -- if the game we get back is not the one we ask for, we should not list it in our system.
-    if app_details['success'] and str(app_details['data']['steam_appid']) == game_id:
+    if not app_details['success']:
+      print('Steam fetch reports non-success')
+    elif not str(app_details['data']['steam_appid']) == game_id:
+      print(f'App ID mismatch, expected {game_id}, found', app_details['data']['steam_appid'])
+    else:
       dump_json(app_details['data'], f'app_details/{game_id}.json')
       return True
   except requests.exceptions.JSONDecodeError:
-    pass # Treat invalid JSON as an invalid game
+    traceback.print_exc() # Treat invalid JSON as an invalid game
 
   # If the game was invalid, make a note of it in deleted_games so that we don't try to fetch it again.
   deleted_games = load_json('deleted_games.js')
@@ -147,16 +152,18 @@ def download_app_tags(game_id):
 
 def refresh_game(game_id):
   print(f'Downloading data for game {game_id}')
+  throttling_limit = datetime.now() + timedelta(seconds=5) # The throttling limit for app details is 40 calls per minute, so this is a reasonably generous sleep.
   try:
     if download_app_details(game_id):
       download_app_tags(game_id)
       download_similar_games(game_id)
       download_review_details(game_id)
   except requests.exceptions.RequestException:
-    pass # Any kind of network error should be considered transient -- skip this game and we'll come back later.
+    # Any kind of network error should be considered transient -- skip this game and we'll come back later.
+    traceback.print_exc()
 
-  # The throttling limit for app details is 40 calls per minute, so this is a reasonably generous sleep.
-  sleep(5)
+  print('Sleeping for', (throttling_limit - datetime.now()).total_seconds(), 'seconds')
+  sleep((throttling_limit - datetime.now()).total_seconds())
 
 if __name__ == '__main__':
   if len(sys.argv) > 1:
