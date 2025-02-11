@@ -105,7 +105,7 @@ def download_app_details(game_id):
       dump_json(app_details['data'], f'app_details/{game_id}.json')
       return True
   except requests.exceptions.JSONDecodeError:
-    traceback.print_exc() # Treat invalid JSON as an invalid game
+    traceback.print_exc(chain=False) # Treat invalid JSON as an invalid game
 
   # If the game was invalid, make a note of it in deleted_games so that we don't try to fetch it again.
   deleted_games = load_json('deleted_games.js')
@@ -160,11 +160,10 @@ def refresh_game(game_id):
       download_review_details(game_id)
   except requests.exceptions.RequestException:
     # Any kind of network error should be considered transient -- skip this game and we'll come back later.
-    traceback.print_exc()
+    traceback.print_exc(chain=False)
 
   sleep_for = (throttling_limit - datetime.now()).total_seconds()
   if sleep_for > 0:
-    print('Sleeping for', sleep_for, 'seconds')
     sleep(sleep_for)
 
 if __name__ == '__main__':
