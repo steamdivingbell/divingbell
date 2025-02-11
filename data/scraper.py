@@ -162,8 +162,10 @@ def refresh_game(game_id):
     # Any kind of network error should be considered transient -- skip this game and we'll come back later.
     traceback.print_exc()
 
-  print('Sleeping for', (throttling_limit - datetime.now()).total_seconds(), 'seconds')
-  sleep((throttling_limit - datetime.now()).total_seconds())
+  sleep_for = (throttling_limit - datetime.now()).total_seconds()
+  if sleep_for > 0:
+  print('Sleeping for', sleep_for, 'seconds')
+  sleep(sleep_for)
 
 if __name__ == '__main__':
   if len(sys.argv) > 1:
