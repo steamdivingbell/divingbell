@@ -2,6 +2,7 @@
 on:
   schedule:
     - cron: '42 * * * *' # Runs 42 minutes past the hour, every hour
+  workflow_dispatch:
 permissions:
   contents: write
 
