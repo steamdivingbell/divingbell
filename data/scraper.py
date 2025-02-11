@@ -164,8 +164,8 @@ def refresh_game(game_id):
 
   sleep_for = (throttling_limit - datetime.now()).total_seconds()
   if sleep_for > 0:
-  print('Sleeping for', sleep_for, 'seconds')
-  sleep(sleep_for)
+    print('Sleeping for', sleep_for, 'seconds')
+    sleep(sleep_for)
 
 if __name__ == '__main__':
   if len(sys.argv) > 1:
