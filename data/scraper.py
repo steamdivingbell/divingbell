@@ -195,6 +195,8 @@ if __name__ == '__main__':
     if datetime.now() >= end_time:
       exit()
 
+  raise # TODO: Figure out how to filter by rating before we start over again
+
   # Then, refresh games in order from where we left off
   ordered_games = sorted(list(all_games))
   with Path('last_fetched.txt').open('r') as f:
