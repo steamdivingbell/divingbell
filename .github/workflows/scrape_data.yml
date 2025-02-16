@@ -27,4 +27,3 @@ jobs:
         git add -A
         git commit -am "Updated game data on $(date)"
         git push
-      continue-on-error: true
