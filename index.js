@@ -14,7 +14,7 @@ window.onload = function() {
     // Then pick one of the top 20 (randomly) -- these should be games that people should be familiar with (I hope).
     var index = Math.floor(Math.random() * 20)
     var topGames = window.top_games()
-    setActiveGame(topGames[index][1])
+    setActiveGame(topGames[index])
   }
 }
 
