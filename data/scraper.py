@@ -205,7 +205,6 @@ if __name__ == '__main__':
   # Start with refreshing unfetched games
   for game in unfetched_games:
     refresh_game(game)
-    exit()
     if datetime.now() >= end_time:
       exit()
 
