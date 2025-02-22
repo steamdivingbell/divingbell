@@ -13,6 +13,7 @@ import traceback
 
 import bs4
 import requests
+import zipfile
 
 
 headers = {
@@ -29,6 +30,18 @@ def load_json(file):
     if contents.startswith(prefix):
       contents = contents[len(prefix):]
     return json.loads(contents)
+
+def load_zip(file):
+  file = Path(file)
+  with zipfile.ZipFile(str(file) + '.zip', 'r') as z:
+    with z.open(file.name, 'r') as f:
+      return json.load(f)
+
+def dump_zip(data, file):
+  file = Path(file)
+  with zipfile.ZipFile(str(file) + '.zip', 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+    with z.open(file.name, 'w') as f:
+      f.write(json.dumps(data, sort_keys=True, separators=(',', ':')).encode('utf-8'))
 
 def dump_js(data, file):
   file = Path(file)
@@ -131,9 +144,9 @@ def download_similar_games(game_id):
   for item in soup.find_all('div', {'class': 'similar_grid_item'}):
     similar_to_this_game.append(item.find('a', {'class': 'similar_grid_capsule'}).get('data-ds-appid'))
 
-  similar_games = load_json('similar_games.js')
+  similar_games = load_zip('similar_games.js')
   similar_games[game_id] = similar_to_this_game
-  dump_js(similar_games, 'similar_games.js')
+  dump_zip(similar_games, 'similar_games.js')
 
 def download_app_tags(game_id):
   soup = get_soup(f'https://store.steampowered.com/app/{game_id}')
@@ -192,6 +205,7 @@ if __name__ == '__main__':
   # Start with refreshing unfetched games
   for game in unfetched_games:
     refresh_game(game)
+    exit()
     if datetime.now() >= end_time:
       exit()
 
